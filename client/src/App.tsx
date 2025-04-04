@@ -5,7 +5,6 @@ import Sidebar from "@/components/layout/Sidebar";
 import WalletConnectModal from "@/components/wallet/WalletConnectModal";
 import { useWallet, supportedWallets } from "@/lib/walletAdapter";
 import NotFound from "@/pages/not-found";
-import HomePage from "@/pages/home-page";
 import Dashboard from "@/pages/Dashboard";
 import AutoTrading from "@/pages/AutoTrading";
 import AIAgentBuilder from "@/pages/AIAgentBuilder";
@@ -86,8 +85,7 @@ function App() {
       {/* Main Content */}
       <main className={`flex-1 p-8 ${isMobile ? 'ml-0' : 'ml-64'}`}>
         <Switch>
-          <Route path="/" component={HomePage} />
-          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/" component={Dashboard} />
           <Route path="/auto-trading" component={AutoTrading} />
           <Route path="/ai-agent-builder" component={AIAgentBuilder} />
           <Route path="/token-creator" component={TokenCreator} />
