@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/layout/Header';
 import TradingBot from '@/components/auto-trading/TradingBot';
 import TradingPerformance from '@/components/auto-trading/TradingPerformance';
@@ -8,6 +8,25 @@ const AutoTrading: React.FC = () => {
   const { wallet } = useWallet();
   const [isBotActive, setIsBotActive] = useState(false);
   const [startingCapital, setStartingCapital] = useState(1000);
+  const [currentValue, setCurrentValue] = useState(startingCapital);
+  const [profitLoss, setProfitLoss] = useState(0);
+  
+  // Update profit/loss values when TradingPerformance component changes values
+  useEffect(() => {
+    if (!isBotActive) {
+      setCurrentValue(startingCapital);
+      setProfitLoss(0);
+      return;
+    }
+    
+    const interval = setInterval(() => {
+      if (isBotActive && currentValue) {
+        setProfitLoss(currentValue - startingCapital);
+      }
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [isBotActive, currentValue, startingCapital]);
   
   const handleStartBot = () => {
     setIsBotActive(true);
@@ -17,8 +36,20 @@ const AutoTrading: React.FC = () => {
     setIsBotActive(false);
   };
   
+  const handleStartingCapitalChange = (value: number) => {
+    setStartingCapital(value);
+    if (!isBotActive) {
+      setCurrentValue(value);
+    }
+  };
+  
+  // Listen for changes in currentValue from TradingPerformance component
+  const updateCurrentValue = (newValue: number) => {
+    setCurrentValue(newValue);
+  };
+  
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto p-4">
       <Header title="Auto Trading Simulator" wallet={wallet} />
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -28,6 +59,9 @@ const AutoTrading: React.FC = () => {
             isActive={isBotActive}
             onStart={handleStartBot}
             onStop={handleStopBot}
+            onStartingCapitalChange={handleStartingCapitalChange}
+            currentValue={currentValue}
+            profitLoss={profitLoss}
           />
         </div>
         

@@ -17,31 +17,31 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <OverviewCard
           title="Portfolio Value"
-          value="$24,356.78"
-          change="+5.2%"
-          description="Updated 5 minutes ago"
+          value="$0.00"
+          change="0.0%"
+          description="Connect wallet to start trading"
           icon="ri-bar-chart-line"
           iconColor="bg-brutalism-blue"
         />
         
         <OverviewCard
           title="Active Bots"
-          value="4"
+          value="0"
           icon="ri-robot-line"
           iconColor="bg-brutalism-yellow"
           action={{
-            label: "View Details",
+            label: "Start Trading Bot",
             onClick: () => setLocation('/auto-trading')
           }}
         />
         
         <OverviewCard
           title="AI Agents"
-          value="3"
+          value="0"
           icon="ri-brain-line"
           iconColor="bg-brutalism-purple"
           action={{
-            label: "Build New Agent",
+            label: "Create New Agent",
             onClick: () => setLocation('/ai-agent-builder'),
             color: "purple"
           }}

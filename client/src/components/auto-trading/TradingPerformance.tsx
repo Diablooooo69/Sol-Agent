@@ -26,7 +26,10 @@ const TradingPerformance: React.FC<TradingPerformanceProps> = ({
     total: 0,
     profit: 0,
     loss: 0,
-    avgTrade: 0
+    avgTrade: 0,
+    bestTrade: 0,
+    worstTrade: 0,
+    winRate: 0
   });
   
   useEffect(() => {
@@ -61,7 +64,10 @@ const TradingPerformance: React.FC<TradingPerformanceProps> = ({
       total: 7,
       profit: 5,
       loss: 2,
-      avgTrade: 2.4
+      avgTrade: 2.4,
+      bestTrade: 4.2,
+      worstTrade: -1.8,
+      winRate: 71.4 // 5/7 * 100
     });
     
     // Generate initial performance metrics
@@ -107,12 +113,25 @@ const TradingPerformance: React.FC<TradingPerformanceProps> = ({
         setRecentTrades([newTrade, ...updatedTrades.slice(0, 2)]);
         
         // Update trade stats
-        setTradeStats(prev => ({
-          total: prev.total + 1,
-          profit: prev.profit + (newTrade.isPositive ? 1 : 0),
-          loss: prev.loss + (newTrade.isPositive ? 0 : 1),
-          avgTrade: parseFloat((((prev.avgTrade * prev.total) + tradePercent) / (prev.total + 1)).toFixed(1))
-        }));
+        setTradeStats(prev => {
+          const newTotal = prev.total + 1;
+          const newProfit = prev.profit + (newTrade.isPositive ? 1 : 0);
+          const newLoss = prev.loss + (newTrade.isPositive ? 0 : 1);
+          const newAvgTrade = parseFloat((((prev.avgTrade * prev.total) + tradePercent) / newTotal).toFixed(1));
+          const newBestTrade = Math.max(prev.bestTrade, tradePercent);
+          const newWorstTrade = Math.min(prev.worstTrade, tradePercent);
+          const newWinRate = parseFloat(((newProfit / newTotal) * 100).toFixed(1));
+          
+          return {
+            total: newTotal,
+            profit: newProfit,
+            loss: newLoss,
+            avgTrade: newAvgTrade,
+            bestTrade: newBestTrade,
+            worstTrade: newWorstTrade,
+            winRate: newWinRate
+          };
+        });
       }
     }, 3000);
     
@@ -198,7 +217,7 @@ const TradingPerformance: React.FC<TradingPerformanceProps> = ({
         </svg>
       </div>
       
-      <div className="grid grid-cols-3 gap-3 text-center">
+      <div className="grid grid-cols-3 gap-3 text-center mb-4">
         <BrutalistCard className="p-3 bg-[#2A2A2A]">
           <p className="text-sm text-gray-400">Current Value</p>
           <p className="text-xl font-bold">{formatCurrency(currentValue)}</p>
@@ -216,9 +235,33 @@ const TradingPerformance: React.FC<TradingPerformanceProps> = ({
         </BrutalistCard>
         
         <BrutalistCard className="p-3 bg-[#2A2A2A]">
+          <p className="text-sm text-gray-400">Win Rate</p>
+          <p className="text-xl font-bold">{formatPercentage(tradeStats.winRate)}</p>
+          <p className={`text-sm ${tradeStats.winRate > 50 ? 'text-brutalism-green' : 'text-brutalism-red'}`}>
+            {tradeStats.winRate > 50 ? 'Above average' : 'Below average'}
+          </p>
+        </BrutalistCard>
+      </div>
+      
+      <div className="grid grid-cols-3 gap-3 text-center mb-4">
+        <BrutalistCard className="p-3 bg-[#2A2A2A]">
           <p className="text-sm text-gray-400">Avg. Trade</p>
           <p className="text-xl font-bold">{formatPercentage(tradeStats.avgTrade)}</p>
-          <p className="text-sm text-brutalism-green">Better than avg.</p>
+          <p className={`text-sm ${tradeStats.avgTrade > 0 ? 'text-brutalism-green' : 'text-brutalism-red'}`}>
+            Per trade average
+          </p>
+        </BrutalistCard>
+        
+        <BrutalistCard className="p-3 bg-[#2A2A2A]">
+          <p className="text-sm text-gray-400">Best Trade</p>
+          <p className="text-xl font-bold text-brutalism-green">+{formatPercentage(tradeStats.bestTrade)}</p>
+          <p className="text-sm text-brutalism-green">Maximum profit</p>
+        </BrutalistCard>
+        
+        <BrutalistCard className="p-3 bg-[#2A2A2A]">
+          <p className="text-sm text-gray-400">Worst Trade</p>
+          <p className="text-xl font-bold text-brutalism-red">{formatPercentage(tradeStats.worstTrade)}</p>
+          <p className="text-sm text-brutalism-red">Maximum loss</p>
         </BrutalistCard>
       </div>
       

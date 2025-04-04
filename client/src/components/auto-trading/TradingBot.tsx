@@ -2,21 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { BrutalistCard } from '../ui/brutalist-card';
 import { BrutalistButton } from '../ui/brutalist-button';
 import { BrutalistToggle } from '../ui/brutalist-toggle';
+import { BrutalistInput } from '../ui/brutalist-input';
 
 interface TradingBotProps {
   isActive: boolean;
   onStart: () => void;
   onStop: () => void;
+  onStartingCapitalChange: (value: number) => void;
+  currentValue?: number;
+  profitLoss?: number;
 }
 
 const TradingBot: React.FC<TradingBotProps> = ({
   isActive,
   onStart,
-  onStop
+  onStop,
+  onStartingCapitalChange,
+  currentValue = 0,
+  profitLoss = 0
 }) => {
   const [riskLevel, setRiskLevel] = useState<'low' | 'medium' | 'high'>('medium');
   const [startingCapital, setStartingCapital] = useState<number>(1000);
   const [autoRebalance, setAutoRebalance] = useState<boolean>(true);
+  const [tradingPairs, setTradingPairs] = useState<string[]>(['BTC/USDT', 'SOL/USDT', 'ETH/USDT']);
+  const [newPair, setNewPair] = useState<string>('');
   
   return (
     <BrutalistCard>
@@ -72,7 +81,11 @@ const TradingBot: React.FC<TradingBotProps> = ({
             max="10000"
             step="100"
             value={startingCapital}
-            onChange={(e) => setStartingCapital(parseInt(e.target.value))}
+            onChange={(e) => {
+              const value = parseInt(e.target.value);
+              setStartingCapital(value);
+              onStartingCapitalChange(value);
+            }}
             className="w-full h-3 bg-[#2A2A2A] rounded-lg appearance-none cursor-pointer"
           />
         </div>
@@ -85,6 +98,61 @@ const TradingBot: React.FC<TradingBotProps> = ({
             checked={autoRebalance}
             onChange={() => setAutoRebalance(!autoRebalance)}
           />
+        </div>
+      </div>
+      
+      {isActive && (
+        <div className="mb-6 p-3 bg-[#2A2A2A] rounded-md border-2 border-black">
+          <div className="flex justify-between mb-2">
+            <p className="text-sm text-gray-400">Current Value</p>
+            <p className="text-sm font-bold">${currentValue.toFixed(2)}</p>
+          </div>
+          <div className="flex justify-between">
+            <p className="text-sm text-gray-400">Profit/Loss</p>
+            <p className={`text-sm font-bold ${profitLoss >= 0 ? 'text-brutalism-green' : 'text-brutalism-red'}`}>
+              {profitLoss >= 0 ? '+' : ''}{profitLoss.toFixed(2)} USD
+            </p>
+          </div>
+        </div>
+      )}
+      
+      <div className="mb-6">
+        <div className="flex justify-between mb-2">
+          <p className="text-sm text-gray-400">Trading Pairs</p>
+          <p className="text-sm font-bold">{tradingPairs.length}</p>
+        </div>
+        <div className="bg-[#2A2A2A] p-2 rounded-md border-2 border-black mb-2 max-h-24 overflow-y-auto">
+          {tradingPairs.map((pair, index) => (
+            <div key={index} className="flex justify-between items-center mb-1 last:mb-0">
+              <span className="text-sm">{pair}</span>
+              <BrutalistButton
+                className="py-0 px-2 text-xs"
+                color="red"
+                onClick={() => setTradingPairs(tradingPairs.filter((_, i) => i !== index))}
+              >
+                X
+              </BrutalistButton>
+            </div>
+          ))}
+        </div>
+        <div className="flex space-x-2">
+          <BrutalistInput 
+            className="flex-1"
+            value={newPair}
+            onChange={(e) => setNewPair(e.target.value)}
+            placeholder="BTC/USDT"
+          />
+          <BrutalistButton
+            color="green"
+            onClick={() => {
+              if (newPair && !tradingPairs.includes(newPair)) {
+                setTradingPairs([...tradingPairs, newPair]);
+                setNewPair('');
+              }
+            }}
+          >
+            Add
+          </BrutalistButton>
         </div>
       </div>
       
