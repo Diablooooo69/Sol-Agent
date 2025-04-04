@@ -19,14 +19,20 @@ const AutoTrading: React.FC = () => {
       return;
     }
     
-    const interval = setInterval(() => {
-      if (isBotActive && currentValue) {
-        setProfitLoss(currentValue - startingCapital);
-      }
-    }, 1000);
+    // Attach a global listener for trade updates
+    const handleTradeEvent = (event: CustomEvent) => {
+      const { currentValue } = event.detail;
+      setCurrentValue(currentValue);
+      setProfitLoss(currentValue - startingCapital);
+    };
     
-    return () => clearInterval(interval);
-  }, [isBotActive, currentValue, startingCapital]);
+    // Create a custom event for trade updates
+    window.addEventListener('tradeUpdate' as any, handleTradeEvent as any);
+    
+    return () => {
+      window.removeEventListener('tradeUpdate' as any, handleTradeEvent as any);
+    };
+  }, [isBotActive, startingCapital]);
   
   const handleStartBot = () => {
     setIsBotActive(true);

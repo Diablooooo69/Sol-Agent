@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrutalistCard } from '../ui/brutalist-card';
 import { generateTradingData, formatCurrency, formatPercentage } from '@/lib/utils';
 
@@ -32,10 +32,84 @@ const TradingPerformance: React.FC<TradingPerformanceProps> = ({
     winRate: 0
   });
   
-  useEffect(() => {
+  // Function to generate a new trade
+  const generateTrade = useCallback(() => {
     if (!isActive) return;
     
-    // Initialize with some random trades
+    // Update current value with small market fluctuation
+    const marketFluctuation = (Math.random() - 0.48) * 0.2; // Small market movements
+    const marketChangeValue = currentValue * marketFluctuation;
+    const newValue = currentValue + marketChangeValue;
+    
+    setCurrentValue(newValue);
+    setTotalChange(newValue - startingCapital);
+    setTotalChangePercentage(((newValue - startingCapital) / startingCapital) * 100);
+    
+    // Dispatch a custom event to notify the parent component
+    const event = new CustomEvent('tradeUpdate', {
+      detail: { currentValue: newValue }
+    });
+    window.dispatchEvent(event);
+    
+    // Generate a trading signal
+    const symbols = ['BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'DOGE/USDT', 'SHIB/USDT'];
+    // Trade outcome: 60% chance of profit, 40% chance of loss
+    const profitBias = Math.random() > 0.4;
+    // Generate trade result with proper magnitude based on risk level
+    const magnitude = profitBias ? (Math.random() * 4 + 0.5) : (Math.random() * 3 + 0.2); // Higher profit potential
+    const tradePercent = profitBias ? magnitude : -magnitude;
+    
+    const newTrade: Trade = {
+      symbol: symbols[Math.floor(Math.random() * symbols.length)],
+      percentage: parseFloat(tradePercent.toFixed(2)),
+      time: 'just now',
+      isPositive: tradePercent > 0
+    };
+    
+    // Update trade times
+    const updatedTrades = recentTrades.map(trade => {
+      if (trade.time === 'just now') return { ...trade, time: '1 min ago' };
+      if (trade.time === '1 min ago') return { ...trade, time: '5 min ago' };
+      if (trade.time === '5 min ago') return { ...trade, time: '10 min ago' };
+      return trade;
+    });
+    
+    // Add new trade to beginning of list and limit to 3
+    setRecentTrades([newTrade, ...updatedTrades.slice(0, 2)]);
+    
+    // Update trade stats
+    setTradeStats(prev => {
+      const newTotal = prev.total + 1;
+      const newProfit = prev.profit + (newTrade.isPositive ? 1 : 0);
+      const newLoss = prev.loss + (newTrade.isPositive ? 0 : 1);
+      const newAvgTrade = parseFloat((((prev.avgTrade * prev.total) + tradePercent) / newTotal).toFixed(1));
+      const newBestTrade = Math.max(prev.bestTrade, tradePercent);
+      const newWorstTrade = Math.min(prev.worstTrade, tradePercent);
+      const newWinRate = parseFloat(((newProfit / newTotal) * 100).toFixed(1));
+      
+      return {
+        total: newTotal,
+        profit: newProfit,
+        loss: newLoss,
+        avgTrade: newAvgTrade,
+        bestTrade: newBestTrade,
+        worstTrade: newWorstTrade,
+        winRate: newWinRate
+      };
+    });
+  }, [isActive, currentValue, recentTrades, startingCapital]);
+  
+  // Reset effect when bot is activated/deactivated  
+  useEffect(() => {
+    if (!isActive) {
+      // Reset values when deactivated
+      setCurrentValue(startingCapital);
+      setTotalChange(0);
+      setTotalChangePercentage(0);
+      return;
+    }
+    
+    // Initialize with some random trades when first activated
     const initialTrades: Trade[] = [
       {
         symbol: 'BTC/USDT',
@@ -72,79 +146,44 @@ const TradingPerformance: React.FC<TradingPerformanceProps> = ({
     
     // Generate initial performance metrics
     const changeValue = startingCapital * 0.123;
-    setCurrentValue(startingCapital + changeValue);
+    const initialValue = startingCapital + changeValue;
+    setCurrentValue(initialValue);
     setTotalChange(changeValue);
     setTotalChangePercentage(12.3);
     
-    // Automated trade simulator at regular intervals
-    const interval = setInterval(() => {
-      if (!isActive) return;
-      
-      // Generate a trade every 5-10 seconds
-      const randomSeconds = Math.floor(Math.random() * 5) + 5; // 5 to 10 seconds
-      setTimeout(() => {
-        if (!isActive) return;
-        
-        // Update current value with small market fluctuation
-        const marketFluctuation = (Math.random() - 0.48) * 0.2; // Small market movements
-        const marketChangeValue = currentValue * marketFluctuation;
-        const newValue = currentValue + marketChangeValue;
-        
-        setCurrentValue(newValue);
-        setTotalChange(newValue - startingCapital);
-        setTotalChangePercentage(((newValue - startingCapital) / startingCapital) * 100);
-        
-        // Generate a trading signal
-        const symbols = ['BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'DOGE/USDT', 'SHIB/USDT'];
-        // Trade outcome: 60% chance of profit, 40% chance of loss
-        const profitBias = Math.random() > 0.4;
-        // Generate trade result with proper magnitude based on risk level
-        const magnitude = profitBias ? (Math.random() * 4 + 0.5) : (Math.random() * 3 + 0.2); // Higher profit potential
-        const tradePercent = profitBias ? magnitude : -magnitude;
-        
-        const newTrade: Trade = {
-          symbol: symbols[Math.floor(Math.random() * symbols.length)],
-          percentage: parseFloat(tradePercent.toFixed(2)),
-          time: 'just now',
-          isPositive: tradePercent > 0
-        };
-        
-        // Update trade times
-        const updatedTrades = recentTrades.map(trade => {
-          if (trade.time === 'just now') return { ...trade, time: '1 min ago' };
-          if (trade.time === '1 min ago') return { ...trade, time: '5 min ago' };
-          if (trade.time === '5 min ago') return { ...trade, time: '10 min ago' };
-          return trade;
-        });
-        
-        // Add new trade to beginning of list and limit to 3
-        setRecentTrades([newTrade, ...updatedTrades.slice(0, 2)]);
-        
-        // Update trade stats
-        setTradeStats(prev => {
-          const newTotal = prev.total + 1;
-          const newProfit = prev.profit + (newTrade.isPositive ? 1 : 0);
-          const newLoss = prev.loss + (newTrade.isPositive ? 0 : 1);
-          const newAvgTrade = parseFloat((((prev.avgTrade * prev.total) + tradePercent) / newTotal).toFixed(1));
-          const newBestTrade = Math.max(prev.bestTrade, tradePercent);
-          const newWorstTrade = Math.min(prev.worstTrade, tradePercent);
-          const newWinRate = parseFloat(((newProfit / newTotal) * 100).toFixed(1));
-          
-          return {
-            total: newTotal,
-            profit: newProfit,
-            loss: newLoss,
-            avgTrade: newAvgTrade,
-            bestTrade: newBestTrade,
-            worstTrade: newWorstTrade,
-            winRate: newWinRate
-          };
-        });
-      }, randomSeconds * 1000);
-    }, 3000);
+    // Dispatch initial event to notify parent component
+    const event = new CustomEvent('tradeUpdate', {
+      detail: { currentValue: initialValue }
+    });
+    window.dispatchEvent(event);
+  }, [isActive, startingCapital]);
+  
+  // Automated trade simulator
+  useEffect(() => {
+    if (!isActive) return;
     
-    return () => clearInterval(interval);
-  }, [isActive, currentValue, recentTrades, startingCapital]);
+    // Generate a new trade immediately
+    generateTrade();
+    
+    // Schedule a new trade every 5-10 seconds
+    const scheduleNextTrade = () => {
+      const randomSeconds = Math.floor(Math.random() * 5) + 5; // 5 to 10 seconds
+      console.log(`Scheduling next trade in ${randomSeconds} seconds`);
+      
+      // Clear any existing timeouts to prevent multiple trades
+      return setTimeout(() => {
+        if (isActive) {
+          generateTrade();
+          // Schedule the next trade after this one
+          scheduleNextTrade();
+        }
+      }, randomSeconds * 1000);
+    };
+    
+    const timeoutId = scheduleNextTrade();
+    
+    return () => clearTimeout(timeoutId);
+  }, [isActive, generateTrade]);
   
   // Generate chart data for performance visualization
   const [data, setData] = useState<{time: Date; value: number; change: number}[]>([]);
