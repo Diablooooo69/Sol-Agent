@@ -101,20 +101,19 @@ const TradingBot: React.FC<TradingBotProps> = ({
         </div>
       </div>
       
-      {isActive && (
-        <div className="mb-6 p-3 bg-[#2A2A2A] rounded-md border-2 border-black">
-          <div className="flex justify-between mb-2">
-            <p className="text-sm text-gray-400">Current Value</p>
-            <p className="text-sm font-bold">${currentValue.toFixed(2)}</p>
-          </div>
-          <div className="flex justify-between">
-            <p className="text-sm text-gray-400">Profit/Loss</p>
-            <p className={`text-sm font-bold ${profitLoss >= 0 ? 'text-brutalism-green' : 'text-brutalism-red'}`}>
-              {profitLoss >= 0 ? '+' : ''}{profitLoss.toFixed(2)} USD
-            </p>
-          </div>
+      {/* Always show current value and profit/loss, whether active or not */}
+      <div className="mb-6 p-3 bg-[#2A2A2A] rounded-md border-2 border-black">
+        <div className="flex justify-between mb-2">
+          <p className="text-sm text-gray-400">Current Value</p>
+          <p className="text-sm font-bold">${currentValue.toFixed(2)}</p>
         </div>
-      )}
+        <div className="flex justify-between">
+          <p className="text-sm text-gray-400">Profit/Loss</p>
+          <p className={`text-sm font-bold ${profitLoss >= 0 ? 'text-brutalism-green' : 'text-brutalism-red'}`}>
+            {profitLoss >= 0 ? '+' : ''}{profitLoss.toFixed(2)} USD
+          </p>
+        </div>
+      </div>
       
       <div className="mb-6">
         <div className="flex justify-between mb-2">

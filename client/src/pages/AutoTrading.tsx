@@ -15,15 +15,10 @@ const AutoTrading: React.FC = () => {
   // Update profit/loss values when TradingPerformance component changes values
   useEffect(() => {
     if (!isBotActive) {
-      setCurrentValue(startingCapital);
-      setProfitLoss(0);
-      // Update global trading state
+      // We don't reset values here anymore
+      // Just mark as inactive but preserve values
       updateTradingState({ 
-        isActive: false,
-        startingCapital,
-        currentValue: startingCapital,
-        profitLoss: 0,
-        profitPercentage: 0
+        isActive: false
       });
       return;
     }

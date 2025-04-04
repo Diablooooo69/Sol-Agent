@@ -11,35 +11,45 @@ const Dashboard: React.FC = () => {
   const { wallet } = useWallet();
   const [location, setLocation] = useLocation();
   const [tradingPerformance, setTradingPerformance] = useState({
-    portfolioValue: "$0.00",
-    change: "0.0%",
+    portfolioValue: "$0",
+    change: "0%",
     description: "Connect wallet to start trading", 
     activeBots: 0,
   });
   
   // Subscribe to trading state changes
   useEffect(() => {
+    // Initialize with current state in case there's already data
+    const currentState = getTradingState();
+    if (currentState.currentValue > 0 && currentState.currentValue !== currentState.startingCapital) {
+      updateDashboardState(currentState);
+    }
+    
+    // Subscribe to future updates
     const unsubscribe = subscribeTradingState(state => {
-      // Only update if there's actual profit/loss to show
-      if (state.profitLoss !== 0) {
-        const portfolioValue = formatCurrency(state.currentValue);
-        const change = formatPercentage(state.profitPercentage);
-        const description = state.isActive ? 
-          "Trading in progress" : 
-          `Profit/Loss: ${state.profitLoss >= 0 ? '+' : ''}${formatCurrency(state.profitLoss)}`;
-        const activeBots = state.isActive ? 1 : 0;
-        
-        setTradingPerformance({
-          portfolioValue,
-          change: state.profitPercentage >= 0 ? `+${change}` : change,
-          description,
-          activeBots
-        });
-      }
+      updateDashboardState(state);
     });
     
     return unsubscribe;
   }, []);
+  
+  // Helper function to update dashboard
+  const updateDashboardState = (state: any) => {
+    // Always update with trading state
+    const portfolioValue = formatCurrency(state.currentValue);
+    const change = formatPercentage(state.profitPercentage);
+    const description = state.isActive ? 
+      "Trading in progress" : 
+      `Profit/Loss: ${state.profitLoss >= 0 ? '+' : ''}${formatCurrency(state.profitLoss)}`;
+    const activeBots = state.isActive ? 1 : 0;
+    
+    setTradingPerformance({
+      portfolioValue,
+      change: state.profitPercentage >= 0 ? `+${change}` : change,
+      description,
+      activeBots
+    });
+  };
   
   return (
     <div className="max-w-7xl mx-auto">

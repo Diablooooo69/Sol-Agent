@@ -99,13 +99,10 @@ const TradingPerformance: React.FC<TradingPerformanceProps> = ({
     });
   }, [isActive, currentValue, recentTrades, startingCapital]);
   
-  // Reset effect when bot is activated/deactivated  
+  // Initialize the bot when activated the first time
   useEffect(() => {
+    // Don't reset when stopping - only initialize when first activated
     if (!isActive) {
-      // Reset values when deactivated
-      setCurrentValue(startingCapital);
-      setTotalChange(0);
-      setTotalChangePercentage(0);
       return;
     }
     
