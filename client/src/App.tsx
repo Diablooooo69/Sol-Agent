@@ -9,8 +9,6 @@ import Dashboard from "@/pages/Dashboard";
 import AutoTrading from "@/pages/AutoTrading";
 import AIAgentBuilder from "@/pages/AIAgentBuilder";
 import TokenCreator from "@/pages/TokenCreator";
-import SmartContracts from "@/pages/SmartContracts";
-import Pump from "@/pages/Pump";
 
 function App() {
   const { wallet, connect, disconnect, isConnecting, error } = useWallet();
@@ -91,8 +89,22 @@ function App() {
           <Route path="/auto-trading" component={AutoTrading} />
           <Route path="/ai-agent-builder" component={AIAgentBuilder} />
           <Route path="/token-creator" component={TokenCreator} />
-          <Route path="/smart-contracts" component={SmartContracts} />
-          <Route path="/pump" component={Pump} />
+          <Route path="/llm">
+            {() => (
+              <div className="p-8 text-center">
+                <h1 className="text-3xl font-bold mb-4">LLM Feature</h1>
+                <p className="text-gray-400">This feature is coming soon.</p>
+              </div>
+            )}
+          </Route>
+          <Route path="/mcp">
+            {() => (
+              <div className="p-8 text-center">
+                <h1 className="text-3xl font-bold mb-4">MCP Feature</h1>
+                <p className="text-gray-400">This feature is coming soon.</p>
+              </div>
+            )}
+          </Route>
           <Route component={NotFound} />
         </Switch>
       </main>

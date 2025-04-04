@@ -29,8 +29,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     { path: '/auto-trading', name: 'Auto Trading', icon: 'ri-robot-line', color: 'bg-brutalism-blue' },
     { path: '/ai-agent-builder', name: 'AI Agent Builder', icon: 'ri-flow-chart', color: 'bg-brutalism-purple' },
     { path: '/token-creator', name: 'Token Creator', icon: 'ri-coin-line', color: 'bg-brutalism-yellow' },
-    { path: '/smart-contracts', name: 'Smart Contracts', icon: 'ri-file-code-line', color: 'bg-brutalism-green' },
-    { path: '/pump', name: 'Pump.fun', icon: 'ri-rocket-line', color: 'bg-brutalism-purple' },
+    { path: '/llm', name: 'LLM', icon: 'ri-ai-generate', color: 'bg-brutalism-green' },
+    { path: '/mcp', name: 'MCP', icon: 'ri-cpu-line', color: 'bg-brutalism-purple' },
     { path: '/more', name: 'More', icon: 'ri-more-2-line', color: 'bg-brutalism-red' },
   ];
 
