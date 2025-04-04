@@ -15,9 +15,18 @@ interface Node {
   data: Record<string, any>;
   inputs: string[];
   outputs: string[];
+  bidirectional?: string[]; // For ports that can work as both input and output
   script?: string;
   category?: string;
   description?: string;
+  gitRepo?: {
+    url: string;
+    branch: string;
+    lastCommit?: string;
+    lastUpdated?: Date;
+  };
+  dependencies?: string[];
+  debugMode?: boolean;
 }
 
 interface Connection {

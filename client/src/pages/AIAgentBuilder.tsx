@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/layout/Header';
 import NodeCanvas from '@/components/ai-agent/NodeCanvas';
 import NodeTemplates, { NodeTemplate } from '@/components/ai-agent/NodeTemplates';
@@ -6,6 +6,8 @@ import { BrutalistCard } from '@/components/ui/brutalist-card';
 import { BrutalistButton } from '@/components/ui/brutalist-button';
 import { BrutalistInput } from '@/components/ui/brutalist-input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useWallet } from '@/lib/walletAdapter';
 import { useToast } from '@/hooks/use-toast';
 
@@ -17,9 +19,18 @@ interface Node {
   data: Record<string, any>;
   inputs: string[];
   outputs: string[];
+  bidirectional?: string[]; // For ports that can work as both input and output
   script?: string;
   category?: string;
   description?: string;
+  gitRepo?: {
+    url: string;
+    branch: string;
+    lastCommit?: string;
+    lastUpdated?: Date;
+  };
+  dependencies?: string[];
+  debugMode?: boolean;
 }
 
 interface Connection {
@@ -50,6 +61,24 @@ const AIAgentBuilder: React.FC = () => {
   const [workflowDescription, setWorkflowDescription] = useState('Detects market trends and auto-trades based on signals');
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  
+  // Git repository management
+  const [isGitModalOpen, setIsGitModalOpen] = useState(false);
+  const [selectedNodeForGit, setSelectedNodeForGit] = useState<string | null>(null);
+  const [gitRepoUrl, setGitRepoUrl] = useState('');
+  const [gitBranch, setGitBranch] = useState('main');
+  const [isGitOperationLoading, setIsGitOperationLoading] = useState(false);
+  
+  // Real-time monitoring
+  const [logs, setLogs] = useState<Array<{nodeId: string, message: string, timestamp: Date, level: 'info' | 'warn' | 'error'}>>([]);
+  const [isMonitoringActive, setIsMonitoringActive] = useState(false);
+  const [debugNodes, setDebugNodes] = useState<string[]>([]);
+  
+  // Dependency management
+  const [dependencyModal, setDependencyModal] = useState<{isOpen: boolean, nodeId: string | null}>({
+    isOpen: false,
+    nodeId: null
+  });
   
   // Node and connection state
   const [nodes, setNodes] = useState<Node[]>([
@@ -460,6 +489,77 @@ if (result) {
         Username: 'Trading Bot',
         Avatar: 'bot_avatar.png'
       }
+    },
+    
+    // Advanced node with bidirectional ports and Git integration
+    {
+      type: 'advanced',
+      title: 'Custom API Gateway',
+      icon: 'ri-api-line',
+      color: 'brutalism-purple',
+      category: 'integration',
+      description: 'Bidirectional API gateway with support for multiple protocols',
+      inputs: ['request'],
+      outputs: ['response'],
+      bidirectional: ['stream', 'websocket'],
+      data: {
+        Protocol: 'REST',
+        Timeout: 30,
+        EnableCache: true,
+        RetryCount: 3
+      },
+      script: `// This script handles bidirectional API communications
+const request = inputs.request ? inputs.request.value : null;
+const protocol = data.Protocol;
+const enableCache = data.EnableCache;
+
+log("Processing API request via " + protocol);
+
+// Handle bidirectional streams if active
+if (port.stream.isActive) {
+  // Stream data in both directions
+  port.stream.write({
+    timestamp: new Date().toISOString(),
+    status: "processing",
+    protocol: protocol
+  });
+  
+  log("Stream connection active");
+}
+
+// Handle websocket connections if active  
+if (port.websocket.isActive) {
+  // Send data over websocket
+  port.websocket.send({
+    event: "status_update",
+    data: {
+      status: "connected",
+      timestamp: new Date().toISOString()
+    }
+  });
+  
+  log("WebSocket connection active");
+}
+
+// Generate response
+outputs.response = {
+  status: 200,
+  body: {
+    success: true,
+    timestamp: new Date().toISOString(),
+    data: {
+      message: "API request processed successfully"
+    }
+  }
+};
+
+log("API response generated");`,
+      gitRepo: {
+        url: 'https://github.com/solana-labs/api-gateway-examples.git',
+        branch: 'main',
+        lastCommit: 'f8e7d9c',
+        lastUpdated: new Date('2025-03-30')
+      }
     }
   ];
   
@@ -475,10 +575,24 @@ if (result) {
       outputs: [...template.outputs],
       script: template.script,
       category: template.category,
-      description: template.description
+      description: template.description,
+      bidirectional: template.bidirectional || [],
+      dependencies: [],
+      debugMode: false
     };
     
     setNodes([...nodes, newNode]);
+    
+    // Log the node creation event to the monitoring console
+    setLogs([
+      ...logs, 
+      {
+        nodeId: newNode.id,
+        message: `Node created: ${newNode.title} (${newNode.type})`,
+        timestamp: new Date(),
+        level: 'info'
+      }
+    ]);
     
     toast({
       title: "Node Added",
@@ -647,6 +761,10 @@ if (result) {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-mono font-bold">Visual Node Workflow Designer</h2>
         <div className="flex space-x-3">
+          <BrutalistButton color="default" onClick={() => setIsMonitoringActive(!isMonitoringActive)}>
+            <i className={`${isMonitoringActive ? 'ri-eye-fill' : 'ri-eye-line'} mr-2`}></i> 
+            {isMonitoringActive ? 'Monitoring On' : 'Monitoring Off'}
+          </BrutalistButton>
           <BrutalistButton color="green" onClick={handleSaveWorkflow}>
             <i className="ri-save-line mr-2"></i> Save Workflow
           </BrutalistButton>
@@ -866,6 +984,429 @@ if (result) {
           </BrutalistCard>
         </div>
       </div>
+      
+      {/* Git Repository Integration Modal */}
+      <Dialog open={isGitModalOpen} onOpenChange={setIsGitModalOpen}>
+        <DialogContent className="bg-[#1E1E1E] border-4 border-black max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="font-mono flex items-center">
+              <i className="ri-git-branch-line mr-2 text-brutalism-purple"></i> 
+              Git Repository Integration
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-4">
+            <p className="text-sm text-gray-400">
+              Link this node to a Git repository to enable version control and collaborative development.
+            </p>
+            
+            {selectedNodeForGit && (
+              <div className="flex items-center bg-[#2A2A2A] p-2 rounded-sm">
+                <div className="w-6 h-6 rounded-sm flex items-center justify-center mr-2" 
+                  style={{backgroundColor: nodes.find(n => n.id === selectedNodeForGit)?.category === 'ai' ? '#9A55FF' : 
+                                          nodes.find(n => n.id === selectedNodeForGit)?.category === 'data' ? '#4B9CFF' : 
+                                          '#50C16E'}}>
+                  <i className="ri-code-line text-white text-xs"></i>
+                </div>
+                <span className="text-sm">
+                  {nodes.find(n => n.id === selectedNodeForGit)?.title || 'Selected Node'}
+                </span>
+              </div>
+            )}
+            
+            <div className="space-y-3">
+              <div>
+                <label className="font-mono text-sm mb-1 block">Repository URL*</label>
+                <BrutalistInput
+                  value={gitRepoUrl}
+                  onChange={(e) => setGitRepoUrl(e.target.value)}
+                  placeholder="https://github.com/username/repo.git"
+                  className="w-full"
+                />
+              </div>
+              
+              <div>
+                <label className="font-mono text-sm mb-1 block">Branch</label>
+                <BrutalistInput
+                  value={gitBranch}
+                  onChange={(e) => setGitBranch(e.target.value)}
+                  placeholder="main"
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="pt-2">
+                <label className="font-mono text-sm mb-1 block">Authentication</label>
+                <div className="flex space-x-2">
+                  <BrutalistButton color="blue" className="text-xs">
+                    <i className="ri-key-line mr-1"></i> Use SSH Key
+                  </BrutalistButton>
+                  <BrutalistButton color="default" className="text-xs">
+                    <i className="ri-lock-line mr-1"></i> Use Token
+                  </BrutalistButton>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-between pt-4 border-t border-gray-700 mt-4">
+              <div>
+                <BrutalistButton 
+                  color="red"
+                  className="text-xs" 
+                  disabled={!selectedNodeForGit || !nodes.find(n => n.id === selectedNodeForGit)?.gitRepo}
+                  onClick={() => {
+                    if (selectedNodeForGit) {
+                      // Remove git repo from node
+                      handleNodeUpdate(selectedNodeForGit, { 
+                        gitRepo: undefined 
+                      });
+                      setIsGitModalOpen(false);
+                      
+                      toast({
+                        title: "Repository Disconnected",
+                        description: "Git repository has been disconnected from this node.",
+                      });
+                    }
+                  }}
+                >
+                  <i className="ri-delete-bin-line mr-1"></i> Disconnect Repository
+                </BrutalistButton>
+              </div>
+              
+              <div className="flex space-x-2">
+                <BrutalistButton color="default" onClick={() => setIsGitModalOpen(false)}>
+                  Cancel
+                </BrutalistButton>
+                <BrutalistButton 
+                  color="green" 
+                  disabled={!gitRepoUrl.trim() || !selectedNodeForGit || isGitOperationLoading}
+                  onClick={() => {
+                    if (selectedNodeForGit && gitRepoUrl) {
+                      setIsGitOperationLoading(true);
+                      
+                      // Simulate git operation
+                      setTimeout(() => {
+                        // Update node with git repo info
+                        handleNodeUpdate(selectedNodeForGit, {
+                          gitRepo: {
+                            url: gitRepoUrl,
+                            branch: gitBranch || 'main',
+                            lastCommit: 'a1b2c3d',
+                            lastUpdated: new Date()
+                          }
+                        });
+                        
+                        setIsGitOperationLoading(false);
+                        setIsGitModalOpen(false);
+                        
+                        toast({
+                          title: "Repository Connected",
+                          description: "Git repository has been linked to this node.",
+                        });
+                      }, 1500);
+                    }
+                  }}
+                >
+                  {isGitOperationLoading ? (
+                    <>
+                      <i className="ri-loader-4-line animate-spin mr-2"></i> Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <i className="ri-link-m mr-2"></i> Connect Repository
+                    </>
+                  )}
+                </BrutalistButton>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Dependency Management Modal */}
+      <Dialog open={dependencyModal.isOpen} onOpenChange={(open) => setDependencyModal({...dependencyModal, isOpen: open})}>
+        <DialogContent className="bg-[#1E1E1E] border-4 border-black max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="font-mono flex items-center">
+              <i className="ri-package-line mr-2 text-brutalism-blue"></i> 
+              Node Dependencies
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-4">
+            {dependencyModal.nodeId && (
+              <div className="flex items-center bg-[#2A2A2A] p-2 rounded-sm">
+                <div className="w-6 h-6 rounded-sm flex items-center justify-center mr-2" 
+                  style={{backgroundColor: nodes.find(n => n.id === dependencyModal.nodeId)?.category === 'ai' ? '#9A55FF' : 
+                                          nodes.find(n => n.id === dependencyModal.nodeId)?.category === 'data' ? '#4B9CFF' : 
+                                          '#50C16E'}}>
+                  <i className="ri-code-line text-white text-xs"></i>
+                </div>
+                <span className="text-sm">
+                  {nodes.find(n => n.id === dependencyModal.nodeId)?.title || 'Selected Node'}
+                </span>
+              </div>
+            )}
+            
+            <div className="flex space-x-2">
+              <BrutalistInput 
+                placeholder="Add new dependency (e.g., pandas==1.3.0)" 
+                className="flex-1"
+              />
+              <BrutalistButton color="blue">
+                <i className="ri-add-line mr-1"></i> Add
+              </BrutalistButton>
+            </div>
+            
+            <div className="mt-4">
+              <h4 className="font-mono text-sm font-bold mb-2">Current Dependencies</h4>
+              <div className="bg-[#111] p-2 rounded-sm h-40 overflow-y-auto">
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center py-1 px-2 bg-[#2A2A2A] rounded-sm">
+                    <span className="text-sm">numpy==1.21.0</span>
+                    <div className="flex space-x-1">
+                      <button className="text-gray-400 hover:text-white text-xs" title="Update">
+                        <i className="ri-refresh-line"></i>
+                      </button>
+                      <button className="text-gray-400 hover:text-red-500 text-xs" title="Remove">
+                        <i className="ri-close-line"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center py-1 px-2 bg-[#2A2A2A] rounded-sm">
+                    <span className="text-sm">pandas==1.3.0</span>
+                    <div className="flex space-x-1">
+                      <button className="text-gray-400 hover:text-white text-xs" title="Update">
+                        <i className="ri-refresh-line"></i>
+                      </button>
+                      <button className="text-gray-400 hover:text-red-500 text-xs" title="Remove">
+                        <i className="ri-close-line"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center py-1 px-2 bg-[#2A2A2A] rounded-sm">
+                    <span className="text-sm">scikit-learn==1.0.1</span>
+                    <div className="flex space-x-1">
+                      <button className="text-gray-400 hover:text-white text-xs" title="Update">
+                        <i className="ri-refresh-line"></i>
+                      </button>
+                      <button className="text-gray-400 hover:text-red-500 text-xs" title="Remove">
+                        <i className="ri-close-line"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-between pt-4 border-t border-gray-700 mt-4">
+              <BrutalistButton color="purple" className="text-xs">
+                <i className="ri-magic-line mr-1"></i> Auto-resolve Dependencies
+              </BrutalistButton>
+              
+              <BrutalistButton color="green">
+                <i className="ri-check-line mr-1"></i> Save Dependencies
+              </BrutalistButton>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Real-time Monitoring Panel */}
+      {isMonitoringActive && (
+        <BrutalistCard className="fixed bottom-4 right-4 w-96 bg-[#1A1A1A] border-4 border-black shadow-2xl">
+          <div className="flex justify-between items-center p-2 bg-[#2A2A2A] border-b-2 border-black">
+            <h4 className="font-mono font-bold flex items-center">
+              <i className="ri-terminal-box-line mr-2 text-brutalism-green"></i> Monitoring Console
+            </h4>
+            <button 
+              className="text-gray-400 hover:text-white" 
+              onClick={() => setIsMonitoringActive(false)}
+            >
+              <i className="ri-close-line"></i>
+            </button>
+          </div>
+          
+          <Tabs defaultValue="logs">
+            <TabsList className="w-full p-0 bg-[#222] rounded-none border-b-2 border-black">
+              <TabsTrigger value="logs" className="flex-1 data-[state=active]:bg-[#2A2A2A]">
+                Logs
+              </TabsTrigger>
+              <TabsTrigger value="performance" className="flex-1 data-[state=active]:bg-[#2A2A2A]">
+                Performance
+              </TabsTrigger>
+              <TabsTrigger value="data" className="flex-1 data-[state=active]:bg-[#2A2A2A]">
+                Data Flow
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="logs" className="mt-0 p-0">
+              <ScrollArea className="h-56">
+                <div className="p-2 space-y-1 font-mono text-xs">
+                  {logs.length > 0 ? (
+                    logs.map((log, index) => (
+                      <div 
+                        key={index} 
+                        className={`p-1 ${
+                          log.level === 'error' ? 'text-red-400' : 
+                          log.level === 'warn' ? 'text-yellow-400' : 
+                          'text-green-400'
+                        }`}
+                      >
+                        <span className="opacity-70">[{log.timestamp.toLocaleTimeString()}]</span>{' '}
+                        <span className="font-bold">[{nodes.find(n => n.id === log.nodeId)?.title || log.nodeId}]</span>{' '}
+                        {log.message}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-gray-500 py-4">
+                      No logs available. Run your workflow to see logs.
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+              
+              <div className="p-2 bg-[#222] border-t-2 border-black flex space-x-2">
+                <BrutalistButton color="default" className="text-xs py-1 flex-1">
+                  <i className="ri-delete-bin-line mr-1"></i> Clear Logs
+                </BrutalistButton>
+                <BrutalistButton color="blue" className="text-xs py-1 flex-1">
+                  <i className="ri-download-line mr-1"></i> Export Logs
+                </BrutalistButton>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="performance" className="mt-0 p-2">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs">Memory Usage</span>
+                  <span className="text-xs font-bold">284.5 MB</span>
+                </div>
+                <div className="h-2 bg-[#333] rounded-full overflow-hidden">
+                  <div className="h-full bg-brutalism-blue w-1/3"></div>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-xs">CPU Usage</span>
+                  <span className="text-xs font-bold">42%</span>
+                </div>
+                <div className="h-2 bg-[#333] rounded-full overflow-hidden">
+                  <div className="h-full bg-brutalism-purple w-2/5"></div>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-xs">Network I/O</span>
+                  <span className="text-xs font-bold">1.2 MB/s</span>
+                </div>
+                <div className="h-2 bg-[#333] rounded-full overflow-hidden">
+                  <div className="h-full bg-brutalism-green w-1/4"></div>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-xs">Execution Time</span>
+                  <span className="text-xs font-bold">124ms</span>
+                </div>
+                <div className="h-2 bg-[#333] rounded-full overflow-hidden">
+                  <div className="h-full bg-brutalism-yellow w-1/5"></div>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="data" className="mt-0 p-2">
+              <div className="space-y-3">
+                <div>
+                  <h5 className="text-xs font-bold mb-1">Active Data Flows</h5>
+                  <div className="bg-[#222] p-2 rounded-sm">
+                    <div className="flex justify-between text-xs">
+                      <span>Market Data → AI Analysis</span>
+                      <span className="text-green-400">Active</span>
+                    </div>
+                    <div className="flex justify-between text-xs mt-1">
+                      <span>AI Analysis → Trading Decision</span>
+                      <span className="text-yellow-400">Pending</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h5 className="text-xs font-bold mb-1">Latest Data Sample</h5>
+                  <pre className="bg-[#222] p-2 rounded-sm text-xs overflow-x-auto">
+{`{
+  "symbol": "SOL/USDT",
+  "price": 103.45,
+  "volume": 1234567,
+  "timestamp": "2025-04-04T12:34:56Z"
+}`}
+                  </pre>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </BrutalistCard>
+      )}
+
+      {/* Node Context Menu for Git Integration and Dependency Management */}
+      <Dialog>
+        <DialogContent className="bg-[#1E1E1E] border-4 border-black">
+          <DialogHeader>
+            <DialogTitle className="font-mono">Node Actions</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-3">
+            <BrutalistButton 
+              color="blue" 
+              className="w-full justify-start"
+              onClick={() => {
+                setSelectedNodeForGit('node-1'); // Example nodeId
+                setIsGitModalOpen(true);
+              }}
+            >
+              <i className="ri-git-branch-line mr-2"></i> Connect to Git Repository
+            </BrutalistButton>
+            
+            <BrutalistButton 
+              color="purple" 
+              className="w-full justify-start"
+              onClick={() => {
+                setDependencyModal({
+                  isOpen: true,
+                  nodeId: 'node-1' // Example nodeId
+                });
+              }}
+            >
+              <i className="ri-package-line mr-2"></i> Manage Dependencies
+            </BrutalistButton>
+            
+            <BrutalistButton 
+              color="green" 
+              className="w-full justify-start"
+              onClick={() => {
+                // Toggle debug mode for this node
+                const nodeId = 'node-1'; // Example nodeId
+                const node = nodes.find(n => n.id === nodeId);
+                if (node) {
+                  handleNodeUpdate(nodeId, { debugMode: !node.debugMode });
+                  
+                  if (!node.debugMode) {
+                    setDebugNodes([...debugNodes, nodeId]);
+                    toast({
+                      title: "Debug Mode Enabled",
+                      description: `${node.title} is now in debug mode.`,
+                    });
+                  } else {
+                    setDebugNodes(debugNodes.filter(id => id !== nodeId));
+                    toast({
+                      title: "Debug Mode Disabled",
+                      description: `${node.title} is no longer in debug mode.`,
+                    });
+                  }
+                }
+              }}
+            >
+              <i className="ri-bug-line mr-2"></i> Toggle Debug Mode
+            </BrutalistButton>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

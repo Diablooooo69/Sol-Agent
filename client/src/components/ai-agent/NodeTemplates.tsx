@@ -22,10 +22,17 @@ export interface NodeTemplate {
   description: string;
   inputs: string[];
   outputs: string[];
+  bidirectional?: string[]; // For ports that can work as both input and output
   data: Record<string, any>;
   script?: string;
   documentation?: string;
   examples?: Array<{title: string, config: Record<string, any>}>;
+  gitRepo?: {
+    url: string;
+    branch: string;
+    lastCommit?: string;
+    lastUpdated?: Date;
+  };
 }
 
 interface NodeTemplatesProps {
@@ -87,6 +94,51 @@ const NodePreview: React.FC<{template: NodeTemplate}> = ({ template }) => {
             )}
           </div>
         </div>
+        
+        {template.bidirectional && template.bidirectional.length > 0 && (
+          <div className="mt-3 border-t border-gray-700 pt-3">
+            <h4 className="text-xs font-mono text-gray-400 mb-2">Bidirectional Ports</h4>
+            <div className="flex flex-wrap gap-2">
+              {template.bidirectional.map(port => (
+                <div key={port} className="flex items-center bg-[#2A2A2A] px-2 py-0.5 rounded-sm">
+                  <div className="w-2 h-2 rounded-full bg-brutalism-purple mr-2"></div>
+                  <span className="text-xs">{port}</span>
+                  <div className="w-2 h-2 rounded-full bg-brutalism-purple ml-2"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {template.gitRepo && (
+          <div className="mt-3 border-t border-gray-700 pt-3">
+            <h4 className="text-xs font-mono text-gray-400 mb-2 flex items-center">
+              <i className="ri-git-branch-line mr-1"></i> Git Repository
+            </h4>
+            <div className="bg-[#2A2A2A] p-2 rounded-sm text-xs">
+              <div className="flex justify-between mb-1">
+                <span className="text-gray-400">Repository:</span>
+                <span className="truncate max-w-[150px]">{template.gitRepo.url}</span>
+              </div>
+              <div className="flex justify-between mb-1">
+                <span className="text-gray-400">Branch:</span>
+                <span>{template.gitRepo.branch}</span>
+              </div>
+              {template.gitRepo.lastCommit && (
+                <div className="flex justify-between mb-1">
+                  <span className="text-gray-400">Last Commit:</span>
+                  <span>{template.gitRepo.lastCommit}</span>
+                </div>
+              )}
+              {template.gitRepo.lastUpdated && (
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Updated:</span>
+                  <span>{template.gitRepo.lastUpdated.toLocaleDateString()}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         
         {template.script && (
           <div className="mt-3 border-t border-gray-700 pt-3">
@@ -202,7 +254,20 @@ const NodeTemplates: React.FC<NodeTemplatesProps> = ({
                       <div className="flex justify-between items-center mb-2 text-xs text-gray-400">
                         <div>Inputs: {template.inputs.length}</div>
                         <div>Outputs: {template.outputs.length}</div>
+                        {template.bidirectional && template.bidirectional.length > 0 && (
+                          <div className="ml-2 flex items-center">
+                            <div className="w-2 h-2 rounded-full bg-brutalism-purple mr-1"></div>
+                            <span>Bi: {template.bidirectional.length}</span>
+                          </div>
+                        )}
                       </div>
+                      
+                      {template.gitRepo && (
+                        <div className="flex items-center text-xs text-gray-400 mb-2 bg-[#222] p-1 rounded-sm">
+                          <i className="ri-git-branch-line mr-1 text-brutalism-green"></i>
+                          <span className="truncate">{template.gitRepo.url.split('/').slice(-2).join('/')}</span>
+                        </div>
+                      )}
                       
                       <div className="flex justify-between space-x-2 mt-3">
                         <DialogTrigger asChild>
