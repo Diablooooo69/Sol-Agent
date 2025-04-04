@@ -53,10 +53,10 @@ const TradingPerformance: React.FC<TradingPerformanceProps> = ({
     
     // Generate a trading signal
     const symbols = ['BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'DOGE/USDT', 'SHIB/USDT'];
-    // Trade outcome: 60% chance of profit, 40% chance of loss
-    const profitBias = Math.random() > 0.4;
+    // Trade outcome: 70% chance of profit, 30% chance of loss
+    const profitBias = Math.random() > 0.3;
     // Generate trade result with proper magnitude based on risk level
-    const magnitude = profitBias ? (Math.random() * 4 + 0.5) : (Math.random() * 3 + 0.2); // Higher profit potential
+    const magnitude = profitBias ? (Math.random() * 4 + 0.5) : (Math.random() * 6 + 1); // Higher loss potential (up to -7%)
     const tradePercent = profitBias ? magnitude : -magnitude;
     
     const newTrade: Trade = {

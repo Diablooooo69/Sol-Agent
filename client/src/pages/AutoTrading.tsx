@@ -3,6 +3,7 @@ import Header from '@/components/layout/Header';
 import TradingBot from '@/components/auto-trading/TradingBot';
 import TradingPerformance from '@/components/auto-trading/TradingPerformance';
 import { useWallet } from '@/lib/walletAdapter';
+import { updateTradingState, getTradingState } from '@/lib/tradingState';
 
 const AutoTrading: React.FC = () => {
   const { wallet } = useWallet();
@@ -16,14 +17,33 @@ const AutoTrading: React.FC = () => {
     if (!isBotActive) {
       setCurrentValue(startingCapital);
       setProfitLoss(0);
+      // Update global trading state
+      updateTradingState({ 
+        isActive: false,
+        startingCapital,
+        currentValue: startingCapital,
+        profitLoss: 0,
+        profitPercentage: 0
+      });
       return;
     }
     
     // Attach a global listener for trade updates
     const handleTradeEvent = (event: CustomEvent) => {
       const { currentValue } = event.detail;
+      const newProfitLoss = currentValue - startingCapital;
+      const profitPercentage = (newProfitLoss / startingCapital) * 100;
+      
       setCurrentValue(currentValue);
-      setProfitLoss(currentValue - startingCapital);
+      setProfitLoss(newProfitLoss);
+      
+      // Update global trading state
+      updateTradingState({
+        isActive: true,
+        currentValue,
+        profitLoss: newProfitLoss,
+        profitPercentage
+      });
     };
     
     // Create a custom event for trade updates
@@ -36,22 +56,30 @@ const AutoTrading: React.FC = () => {
   
   const handleStartBot = () => {
     setIsBotActive(true);
+    updateTradingState({ isActive: true });
   };
   
   const handleStopBot = () => {
     setIsBotActive(false);
+    
+    // When stopping the bot, make sure to update the global state
+    // This will show the profit/loss in the dashboard
+    const state = getTradingState();
+    updateTradingState({ 
+      isActive: false,
+      currentValue: state.currentValue,
+      profitLoss: state.currentValue - state.startingCapital,
+      profitPercentage: ((state.currentValue - state.startingCapital) / state.startingCapital) * 100
+    });
   };
   
   const handleStartingCapitalChange = (value: number) => {
     setStartingCapital(value);
     if (!isBotActive) {
       setCurrentValue(value);
+      // Update global state
+      updateTradingState({ startingCapital: value, currentValue: value });
     }
-  };
-  
-  // Listen for changes in currentValue from TradingPerformance component
-  const updateCurrentValue = (newValue: number) => {
-    setCurrentValue(newValue);
   };
   
   return (

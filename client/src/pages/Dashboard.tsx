@@ -1,13 +1,45 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/layout/Header';
 import OverviewCard from '@/components/dashboard/OverviewCard';
 import PerformanceChart from '@/components/dashboard/PerformanceChart';
 import { useWallet } from '@/lib/walletAdapter';
 import { useLocation } from 'wouter';
+import { subscribeTradingState, getTradingState } from '@/lib/tradingState';
+import { formatCurrency, formatPercentage } from '@/lib/utils';
 
 const Dashboard: React.FC = () => {
   const { wallet } = useWallet();
   const [location, setLocation] = useLocation();
+  const [tradingPerformance, setTradingPerformance] = useState({
+    portfolioValue: "$0.00",
+    change: "0.0%",
+    description: "Connect wallet to start trading", 
+    activeBots: 0,
+  });
+  
+  // Subscribe to trading state changes
+  useEffect(() => {
+    const unsubscribe = subscribeTradingState(state => {
+      // Only update if there's actual profit/loss to show
+      if (state.profitLoss !== 0) {
+        const portfolioValue = formatCurrency(state.currentValue);
+        const change = formatPercentage(state.profitPercentage);
+        const description = state.isActive ? 
+          "Trading in progress" : 
+          `Profit/Loss: ${state.profitLoss >= 0 ? '+' : ''}${formatCurrency(state.profitLoss)}`;
+        const activeBots = state.isActive ? 1 : 0;
+        
+        setTradingPerformance({
+          portfolioValue,
+          change: state.profitPercentage >= 0 ? `+${change}` : change,
+          description,
+          activeBots
+        });
+      }
+    });
+    
+    return unsubscribe;
+  }, []);
   
   return (
     <div className="max-w-7xl mx-auto">
@@ -17,20 +49,20 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <OverviewCard
           title="Portfolio Value"
-          value="$0.00"
-          change="0.0%"
-          description="Connect wallet to start trading"
+          value={tradingPerformance.portfolioValue}
+          change={tradingPerformance.change}
+          description={tradingPerformance.description}
           icon="ri-bar-chart-line"
           iconColor="bg-brutalism-blue"
         />
         
         <OverviewCard
           title="Active Bots"
-          value="0"
+          value={String(tradingPerformance.activeBots)}
           icon="ri-robot-line"
           iconColor="bg-brutalism-yellow"
           action={{
-            label: "Start Trading Bot",
+            label: tradingPerformance.activeBots > 0 ? "Manage Bots" : "Start Trading Bot",
             onClick: () => setLocation('/auto-trading')
           }}
         />
