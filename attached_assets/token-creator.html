@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token Creator - Solana AI Agent Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script src="https://accounts.google.com/gsi/client" async></script>
+    <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
+    <script src="google-auth.js" defer></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brutalism-red': '#FF5A5F',
+                        'brutalism-blue': '#3A86FF',
+                        'brutalism-yellow': '#FFD60A',
+                        'brutalism-green': '#2ECC71',
+                        'brutalism-purple': '#9B51E0',
+                        brutalism: {
+                            black: '#000000',
+                            white: '#FFFFFF',
+                            yellow: '#FFBE0B',
+                            blue: '#3A86FF',
+                            red: '#FF5A5F',
+                            green: '#2ECC71',
+                            purple: '#8338EC'
+                        }
+                    },
+                    borderRadius: {
+                        'none': '0px',
+                        'sm': '2px',
+                        DEFAULT: '4px',
+                        'md': '8px',
+                        'lg': '12px',
+                        'xl': '16px',
+                        '2xl': '20px',
+                        '3xl': '24px',
+                        'full': '9999px',
+                        'button': '4px'
+                    },
+                    fontFamily: {
+                        'mono': ['"Space Mono"', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :where([class^="ri-"])::before { content: "\f3c2"; }
+        
+        body {
+            background-color: #121212;
+            color: #FFFFFF;
+            font-family: 'Space Mono', monospace;
+        }
+        
+        .brutalist-card {
+            border: 4px solid #000000;
+            box-shadow: 8px 8px 0px #000000;
+            transition: all 0.2s ease;
+            transform: rotate(0deg);
+            background-color: #1E1E1E;
+        }
+        
+        .brutalist-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 10px 10px 0px #000000;
+        }
+        
+        .brutalist-button {
+            border: 3px solid #000000;
+            box-shadow: 4px 4px 0px #000000;
+            transition: all 0.2s ease;
+            transform: rotate(0deg);
+        }
+        
+        .brutalist-button:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px #000000;
+        }
+        
+        .brutalist-button:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #000000;
+        }
+        
+        .brutalist-input {
+            border: 3px solid #000000;
+            background-color: #2A2A2A;
+        }
+        
+        .brutalist-input:focus {
+            outline: none;
+            border-color: #3A86FF;
+        }
+        
+        .brutalist-toggle {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .brutalist-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .brutalist-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #2A2A2A;
+            border: 3px solid #000000;
+            transition: .4s;
+        }
+        
+        .brutalist-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            border: 2px solid #000000;
+            transition: .4s;
+        }
+        
+        input:checked + .brutalist-slider {
+            background-color: #3A86FF;
+        }
+        
+        input:checked + .brutalist-slider:before {
+            transform: translateX(26px);
+        }
+        
+        .sidebar-item {
+            border-left: 6px solid transparent;
+            transition: all 0.2s ease;
+        }
+        
+        .sidebar-item.active {
+            border-left: 6px solid #FF5A5F;
+            background-color: rgba(255, 90, 95, 0.1);
+        }
+        
+        .sidebar-item:hover:not(.active) {
+            border-left: 6px solid #3A86FF;
+            background-color: rgba(58, 134, 255, 0.1);
+        }
+
+        .form-section {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .form-section.open {
+            max-height: 1000px;
+        }
+
+        .section-header {
+            cursor: pointer;
+        }
+
+        .section-header i {
+            transition: transform 0.3s ease;
+        }
+
+        .section-header.open i {
+            transform: rotate(180deg);
+        }
+
+        .token-preview {
+            perspective: 1000px;
+        }
+
+        .token-preview-card {
+            transition: transform 0.5s;
+            transform-style: preserve-3d;
+        }
+
+        .token-preview-card:hover {
+            transform: rotateY(10deg);
+        }
+
+        .upload-zone {
+            border: 3px dashed #3A86FF;
+            transition: all 0.3s ease;
+        }
+
+        .upload-zone:hover {
+            border-color: #FF5A5F;
+            background-color: rgba(255, 90, 95, 0.1);
+        }
+
+        .error-message {
+            color: #FF5A5F;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .input-error {
+            border-color: #FF5A5F;
+        }
+
+        .input-success {
+            border-color: #2ECC71;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1E1E1E;
+            border-left: 2px solid #000000;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #3A86FF;
+            border: 2px solid #000000;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FF5A5F;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 50;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0 !important;
+                padding: 1rem !important;
+            }
+            
+            .token-form-grid {
+                grid-template-columns: 1fr !important;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header-flex {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .search-container {
+                width: 100%;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr !important;
+            }
+            
+            .brutalist-button {
+                width: 100%;
+            }
+            
+            .token-preview {
+                position: static !important;
+                margin-top: 2rem;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-[#1A1A1A] border-r-4 border-black flex flex-col h-screen fixed">
+        <div class="p-6 border-b-4 border-black">
+            <img src="logo.png" alt="Solana AI Agent Logo" class="h-10">
+        </div>
+        
+        <nav class="flex-1 py-4 overflow-y-auto">
+            <ul class="space-y-2 px-2">
+                <li>
+                    <a href="Solana-AI-Agent-Dashboard.html" class="sidebar-item flex items-center p-3 text-white hover:text-white">
+                        <div class="w-8 h-8 flex items-center justify-center mr-3 bg-brutalism-red rounded-lg">
+                            <i class="ri-dashboard-line text-white"></i>
+                        </div>
+                        <span class="font-mono font-bold">Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="auto-trading.html" class="sidebar-item flex items-center p-3 text-white hover:text-white">
+                        <div class="w-8 h-8 flex items-center justify-center mr-3 bg-brutalism-blue rounded-lg">
+                            <i class="ri-robot-line text-white"></i>
+                        </div>
+                        <span class="font-mono font-bold">Auto Trading</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="sidebar-item active flex items-center p-3 text-white hover:text-white">
+                        <div class="w-8 h-8 flex items-center justify-center mr-3 bg-brutalism-yellow rounded-lg">
+                            <i class="ri-coin-line text-white"></i>
+                        </div>
+                        <span class="font-mono font-bold">Token Creator</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="smart-contracts.html" class="sidebar-item flex items-center p-3 text-white hover:text-white">
+                        <div class="w-8 h-8 flex items-center justify-center mr-3 bg-brutalism-green rounded-lg">
+                            <i class="ri-file-code-line text-white"></i>
+                        </div>
+                        <span class="font-mono font-bold">Smart Contracts</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="pump.html" class="sidebar-item flex items-center p-3 text-white hover:text-white">
+                        <div class="w-8 h-8 flex items-center justify-center mr-3 bg-brutalism-purple rounded-lg">
+                            <i class="ri-rocket-line text-white"></i>
+                        </div>
+                        <span class="font-mono font-bold">Pump.fun</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="sidebar-item flex items-center p-3 text-white hover:text-white">
+                        <div class="w-8 h-8 flex items-center justify-center mr-3 bg-brutalism-red rounded-lg">
+                            <i class="ri-more-2-line text-white"></i>
+                        </div>
+                        <span class="font-mono font-bold">More</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        
+        <div class="p-4 border-t-4 border-black">
+            <div class="brutalist-card p-4 bg-[#2A2A2A]">
+                <!-- Google Login Button -->
+                <div id="googleLoginButton" class="flex justify-center mb-4"></div>
+                
+                <!-- User Profile Section -->
+                <div id="userProfileSection" style="display: none;">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 rounded-full bg-brutalism-blue flex items-center justify-center border-2 border-black overflow-hidden">
+                            <img id="userProfileImage" src="" alt="Profile" class="w-full h-full object-cover" style="display: none;">
+                            <i id="userProfileIcon" class="ri-user-line text-white ri-lg"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p id="userProfileName" class="font-mono font-bold text-white">Guest</p>
+                            <p id="userProfileEmail" class="text-xs text-gray-400">Not logged in</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col space-y-2">
+                        <button class="brutalist-button !rounded-button w-full py-2 bg-brutalism-yellow text-black font-mono font-bold whitespace-nowrap">
+                            Manage Account
+                        </button>
+                        <button onclick="handleSignOut()" class="brutalist-button !rounded-button w-full py-2 bg-brutalism-red text-white font-mono font-bold whitespace-nowrap">
+                            Sign Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-64 flex-1 p-8">
+        <div class="max-w-7xl mx-auto">
+            <!-- Header -->
+            <header class="mb-8 flex justify-between items-center header-flex">
+                <div>
+                    <h1 class="text-3xl font-mono font-bold">Token Creator</h1>
+                    <p class="text-gray-400">Create your own Solana token</p>
+                </div>
+                <div class="flex space-x-4">
+                    <div class="relative">
+                        <input type="text" placeholder="Search..." class="brutalist-input py-2 px-4 pr-10 w-64 text-white !rounded-button border-none">
+                        <div class="absolute right-3 top-1/2 transform -translate-y-1/2 w-6 h-6 flex items-center justify-center">
+                            <i class="ri-search-line text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Form and Preview Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 token-form-grid">
+                <!-- Token Creation Form -->
+                <div class="space-y-6">
+                    <!-- Basic Token Information -->
+                    <div class="brutalist-card p-6 bg-[#2A2A2A]">
+                        <div class="section-header flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-mono font-bold">Basic Information</h2>
+                            <i class="ri-arrow-down-s-line text-xl"></i>
+                        </div>
+                        <div class="form-section open space-y-4">
+                            <div>
+                                <label class="block font-mono text-sm mb-2">Token Name</label>
+                                <input type="text" class="brutalist-input w-full py-2 px-3 text-white !rounded-button" placeholder="My Token">
+                                <span class="error-message">Token name is required</span>
+                            </div>
+                            <div>
+                                <label class="block font-mono text-sm mb-2">Token Symbol</label>
+                                <input type="text" class="brutalist-input w-full py-2 px-3 text-white !rounded-button" placeholder="MTK">
+                                <span class="error-message">Symbol must be 2-10 characters</span>
+                            </div>
+                            <div>
+                                <label class="block font-mono text-sm mb-2">Decimals</label>
+                                <input type="number" class="brutalist-input w-full py-2 px-3 text-white !rounded-button" value="9" min="0" max="9">
+                            </div>
+                            <div>
+                                <label class="block font-mono text-sm mb-2">Total Supply</label>
+                                <div class="flex space-x-2">
+                                    <input type="text" class="brutalist-input flex-1 py-2 px-3 text-white !rounded-button" placeholder="1,000,000,000">
+                                    <button class="brutalist-button !rounded-button bg-brutalism-blue text-white py-2 px-4 font-mono font-bold">Max</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Token Properties -->
+                    <div class="brutalist-card p-6 bg-[#2A2A2A]">
+                        <div class="section-header flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-mono font-bold">Token Properties</h2>
+                            <i class="ri-arrow-down-s-line text-xl"></i>
+                        </div>
+                        <div class="form-section open space-y-4">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h3 class="font-mono font-bold">Mint Authority</h3>
+                                    <p class="text-sm text-gray-400">Allow minting new tokens</p>
+                                </div>
+                                <label class="brutalist-toggle">
+                                    <input type="checkbox" checked>
+                                    <span class="brutalist-slider"></span>
+                                </label>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h3 class="font-mono font-bold">Freeze Authority</h3>
+                                    <p class="text-sm text-gray-400">Allow freezing token accounts</p>
+                                </div>
+                                <label class="brutalist-toggle">
+                                    <input type="checkbox">
+                                    <span class="brutalist-slider"></span>
+                                </label>
+                            </div>
+                            <div>
+                                <h3 class="font-mono font-bold mb-2">Transfer Fee</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm text-gray-400">Fee (%)</label>
+                                        <input type="number" class="brutalist-input w-full py-2 px-3 text-white !rounded-button" placeholder="0.5">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-gray-400">Fee Recipient</label>
+                                        <input type="text" class="brutalist-input w-full py-2 px-3 text-white !rounded-button" placeholder="Solana address">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Token Metadata -->
+                    <div class="brutalist-card p-6 bg-[#2A2A2A]">
+                        <div class="section-header flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-mono font-bold">Token Metadata</h2>
+                            <i class="ri-arrow-down-s-line text-xl"></i>
+                        </div>
+                        <div class="form-section open space-y-4">
+                            <div>
+                                <label class="block font-mono text-sm mb-2">Logo</label>
+                                <div class="upload-zone p-8 rounded-lg text-center">
+                                    <i class="ri-upload-cloud-line text-4xl text-brutalism-blue mb-2"></i>
+                                    <p class="font-mono text-sm">Drag & drop or click to upload</p>
+                                    <p class="text-xs text-gray-400 mt-1">PNG, JPG, or SVG (max. 2MB)</p>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block font-mono text-sm mb-2">Description</label>
+                                <textarea class="brutalist-input w-full py-2 px-3 text-white !rounded-button" rows="3" placeholder="Describe your token..."></textarea>
+                            </div>
+                            <div>
+                                <label class="block font-mono text-sm mb-2">Website</label>
+                                <input type="url" class="brutalist-input w-full py-2 px-3 text-white !rounded-button" placeholder="https://">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block font-mono text-sm mb-2">Twitter</label>
+                                    <input type="text" class="brutalist-input w-full py-2 px-3 text-white !rounded-button" placeholder="@username">
+                                </div>
+                                <div>
+                                    <label class="block font-mono text-sm mb-2">Discord</label>
+                                    <input type="text" class="brutalist-input w-full py-2 px-3 text-white !rounded-button" placeholder="Discord invite">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-4">
+                        <button class="brutalist-button !rounded-button flex-1 bg-brutalism-green text-white py-3 font-mono font-bold text-lg">
+                            Create Token
+                        </button>
+                        <button class="brutalist-button !rounded-button bg-[#333333] text-white py-3 px-6 font-mono font-bold text-lg">
+                            Save Draft
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Token Preview -->
+                <div class="token-preview lg:sticky lg:top-8">
+                    <div class="brutalist-card p-6 bg-[#2A2A2A] token-preview-card">
+                        <h2 class="text-xl font-mono font-bold mb-4">Token Preview</h2>
+                        <div class="bg-[#1A1A1A] p-6 rounded-lg border-2 border-black">
+                            <div class="flex items-center mb-6">
+                                <div class="w-16 h-16 bg-brutalism-blue rounded-full flex items-center justify-center">
+                                    <i class="ri-token-swap-line text-3xl text-white"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="font-mono font-bold text-2xl">My Token</h3>
+                                    <p class="text-gray-400">MTK</p>
+                                </div>
+                            </div>
+                            <div class="space-y-4">
+                                <div>
+                                    <p class="text-sm text-gray-400">Total Supply</p>
+                                    <p class="font-mono font-bold">1,000,000,000 MTK</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-400">Decimals</p>
+                                    <p class="font-mono font-bold">9</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-400">Features</p>
+                                    <div class="flex space-x-2 mt-1">
+                                        <span class="bg-brutalism-blue bg-opacity-20 text-brutalism-blue text-xs py-1 px-2 rounded">Mintable</span>
+                                        <span class="bg-brutalism-red bg-opacity-20 text-brutalism-red text-xs py-1 px-2 rounded">Non-Freezable</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <h3 class="font-mono font-bold mb-2">Estimated Fees</h3>
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Token Creation</span>
+                                    <span class="font-mono">0.005 SOL</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Metadata</span>
+                                    <span class="font-mono">0.002 SOL</span>
+                                </div>
+                                <div class="flex justify-between font-bold border-t border-gray-700 pt-2 mt-2">
+                                    <span>Total</span>
+                                    <span class="font-mono">0.007 SOL</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add menu toggle button for mobile -->
+    <button id="menuToggle" class="fixed top-4 right-4 z-50 brutalist-button bg-brutalism-blue text-white p-2 lg:hidden">
+        <i class="ri-menu-line text-xl"></i>
+    </button>
+
+    <script>
+        // Section toggle functionality
+        document.querySelectorAll('.section-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const section = header.nextElementSibling;
+                const icon = header.querySelector('i');
+                
+                header.classList.toggle('open');
+                section.classList.toggle('open');
+                
+                if (section.classList.contains('open')) {
+                    section.style.maxHeight = section.scrollHeight + "px";
+                } else {
+                    section.style.maxHeight = 0;
+                }
+            });
+        });
+
+        // Form validation
+        const tokenNameInput = document.querySelector('input[placeholder="My Token"]');
+        const tokenSymbolInput = document.querySelector('input[placeholder="MTK"]');
+
+        tokenNameInput.addEventListener('input', validateTokenName);
+        tokenSymbolInput.addEventListener('input', validateTokenSymbol);
+
+        function validateTokenName(e) {
+            const input = e.target;
+            const error = input.nextElementSibling;
+            
+            if (input.value.length === 0) {
+                input.classList.add('input-error');
+                error.style.display = 'block';
+            } else {
+                input.classList.remove('input-error');
+                input.classList.add('input-success');
+                error.style.display = 'none';
+            }
+        }
+
+        function validateTokenSymbol(e) {
+            const input = e.target;
+            const error = input.nextElementSibling;
+            
+            if (input.value.length < 2 || input.value.length > 10) {
+                input.classList.add('input-error');
+                error.style.display = 'block';
+            } else {
+                input.classList.remove('input-error');
+                input.classList.add('input-success');
+                error.style.display = 'none';
+            }
+        }
+
+        // File upload handling
+        const uploadZone = document.querySelector('.upload-zone');
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('border-brutalism-blue');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('border-brutalism-blue');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('border-brutalism-blue');
+            // Handle file upload
+        });
+
+        // Live preview updates
+        const inputs = document.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('input', updatePreview);
+        });
+
+        function updatePreview() {
+            const tokenName = document.querySelector('input[placeholder="My Token"]').value || 'My Token';
+            const tokenSymbol = document.querySelector('input[placeholder="MTK"]').value || 'MTK';
+            const totalSupply = document.querySelector('input[placeholder="1,000,000,000"]').value || '1,000,000,000';
+            
+            document.querySelector('.token-preview h3').textContent = tokenName;
+            document.querySelector('.token-preview p.text-gray-400').textContent = tokenSymbol;
+            document.querySelector('.token-preview .font-mono.font-bold').textContent = `${totalSupply} ${tokenSymbol}`;
+        }
+
+        // Mobile menu toggle
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.querySelector('.sidebar');
+        
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+        
+        // Close sidebar when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
+                sidebar.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html> 
