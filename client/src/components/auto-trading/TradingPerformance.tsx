@@ -1,217 +1,134 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrutalistCard } from '../ui/brutalist-card';
 import { generateTradingData, formatCurrency, formatPercentage } from '@/lib/utils';
-
-interface Trade {
-  symbol: string;
-  percentage: number;
-  time: string;
-  isPositive: boolean;
-}
+import { subscribeTradingState, getTradingState } from '@/lib/tradingState';
 
 interface TradingPerformanceProps {
   isActive: boolean;
   startingCapital: number;
 }
 
+// Simple interfaces for chart data
+interface DataPoint {
+  time: Date;
+  value: number;
+  change: number;
+}
+
 const TradingPerformance: React.FC<TradingPerformanceProps> = ({
   isActive,
   startingCapital
 }) => {
+  // State from trading bot
   const [currentValue, setCurrentValue] = useState(startingCapital);
   const [totalChange, setTotalChange] = useState(0);
   const [totalChangePercentage, setTotalChangePercentage] = useState(0);
-  const [recentTrades, setRecentTrades] = useState<Trade[]>([]);
   const [tradeStats, setTradeStats] = useState({
     total: 0,
     profit: 0,
     loss: 0,
-    avgTrade: 0,
+    avgWin: 0,
+    avgLoss: 0,
     bestTrade: 0,
     worstTrade: 0,
     winRate: 0
   });
   
-  // Function to generate a new trade
-  const generateTrade = useCallback(() => {
-    if (!isActive) return;
-    
-    // Update current value with small market fluctuation
-    const marketFluctuation = (Math.random() - 0.48) * 0.2; // Small market movements
-    const marketChangeValue = currentValue * marketFluctuation;
-    const newValue = currentValue + marketChangeValue;
-    
-    setCurrentValue(newValue);
-    setTotalChange(newValue - startingCapital);
-    setTotalChangePercentage(((newValue - startingCapital) / startingCapital) * 100);
-    
-    // Dispatch a custom event to notify the parent component
-    const event = new CustomEvent('tradeUpdate', {
-      detail: { currentValue: newValue }
-    });
-    window.dispatchEvent(event);
-    
-    // Generate a trading signal
-    const symbols = ['BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'DOGE/USDT', 'SHIB/USDT'];
-    // Trade outcome: 70% chance of profit, 30% chance of loss
-    const profitBias = Math.random() > 0.3;
-    // Generate trade result with proper magnitude based on risk level
-    const magnitude = profitBias ? (Math.random() * 4 + 0.5) : (Math.random() * 6 + 1); // Higher loss potential (up to -7%)
-    const tradePercent = profitBias ? magnitude : -magnitude;
-    
-    const newTrade: Trade = {
-      symbol: symbols[Math.floor(Math.random() * symbols.length)],
-      percentage: parseFloat(tradePercent.toFixed(2)),
-      time: 'just now',
-      isPositive: tradePercent > 0
-    };
-    
-    // Update trade times
-    const updatedTrades = recentTrades.map(trade => {
-      if (trade.time === 'just now') return { ...trade, time: '1 min ago' };
-      if (trade.time === '1 min ago') return { ...trade, time: '5 min ago' };
-      if (trade.time === '5 min ago') return { ...trade, time: '10 min ago' };
-      return trade;
-    });
-    
-    // Add new trade to beginning of list and limit to 3
-    setRecentTrades([newTrade, ...updatedTrades.slice(0, 2)]);
-    
-    // Update trade stats
-    setTradeStats(prev => {
-      const newTotal = prev.total + 1;
-      const newProfit = prev.profit + (newTrade.isPositive ? 1 : 0);
-      const newLoss = prev.loss + (newTrade.isPositive ? 0 : 1);
-      const newAvgTrade = parseFloat((((prev.avgTrade * prev.total) + tradePercent) / newTotal).toFixed(1));
-      const newBestTrade = Math.max(prev.bestTrade, tradePercent);
-      const newWorstTrade = Math.min(prev.worstTrade, tradePercent);
-      const newWinRate = parseFloat(((newProfit / newTotal) * 100).toFixed(1));
-      
-      return {
-        total: newTotal,
-        profit: newProfit,
-        loss: newLoss,
-        avgTrade: newAvgTrade,
-        bestTrade: newBestTrade,
-        worstTrade: newWorstTrade,
-        winRate: newWinRate
-      };
-    });
-  }, [isActive, currentValue, recentTrades, startingCapital]);
+  // Get current trading state
+  const getTradingStateData = () => {
+    return getTradingState();
+  };
   
-  // Initialize the bot when activated the first time
+  // Chart data
+  const [data, setData] = useState<DataPoint[]>([]);
+  
+  // Subscribe to trading state updates
   useEffect(() => {
-    // Don't reset when stopping - only initialize when first activated
-    if (!isActive) {
-      return;
+    // Subscribe to the trading state
+    const unsubscribe = subscribeTradingState((state) => {
+      setCurrentValue(state.currentValue);
+      setTotalChange(state.profitLoss);
+      setTotalChangePercentage(state.profitLossPercentage);
+      
+      // Only update other stats if there are trades
+      if (state.tradeCount > 0) {
+        setTradeStats({
+          total: state.tradeCount,
+          profit: state.winCount,
+          loss: state.lossCount,
+          avgWin: state.avgWinAmount,
+          avgLoss: state.avgLossAmount,
+          bestTrade: state.bestTrade,
+          worstTrade: state.worstTrade,
+          winRate: state.winRate
+        });
+        
+        // Add new data point to the chart when a new trade happens
+        addDataPoint(state.currentValue);
+      }
+    });
+    
+    // Cleanup on unmount
+    return () => unsubscribe();
+  }, []);
+  
+  // Initialize the chart data when the component mounts
+  useEffect(() => {
+    initializeChartData();
+  }, []);
+  
+  // Initialize chart with some data points
+  const initializeChartData = () => {
+    const initialData: DataPoint[] = [];
+    const now = new Date();
+    
+    // Generate 20 initial data points with slight uptrend bias
+    for (let i = 0; i < 20; i++) {
+      const minutesAgo = 19 - i;
+      const pointTime = new Date(now.getTime() - minutesAgo * 60000);
+      const baseValue = startingCapital * (1 + 0.01 * i); // Slight uptrend
+      const randomOffset = (Math.random() - 0.45) * (startingCapital * 0.015); // Small random movements
+      const value = baseValue + randomOffset;
+      
+      initialData.push({
+        time: pointTime,
+        value,
+        change: i === 0 ? 0 : ((value - initialData[i-1].value) / initialData[i-1].value) * 100
+      });
     }
     
-    // Initialize with some random trades when first activated
-    const initialTrades: Trade[] = [
-      {
-        symbol: 'BTC/USDT',
-        percentage: 4.2,
-        time: '10 min ago',
-        isPositive: true
-      },
-      {
-        symbol: 'SOL/USDT',
-        percentage: -1.8,
-        time: '25 min ago',
-        isPositive: false
-      },
-      {
-        symbol: 'ETH/USDT',
-        percentage: 2.5,
-        time: '43 min ago',
-        isPositive: true
-      }
-    ];
-    
-    setRecentTrades(initialTrades);
-    
-    // Generate initial stats
-    setTradeStats({
-      total: 7,
-      profit: 5,
-      loss: 2,
-      avgTrade: 2.4,
-      bestTrade: 4.2,
-      worstTrade: -1.8,
-      winRate: 71.4 // 5/7 * 100
-    });
-    
-    // Generate initial performance metrics
-    const changeValue = startingCapital * 0.123;
-    const initialValue = startingCapital + changeValue;
-    setCurrentValue(initialValue);
-    setTotalChange(changeValue);
-    setTotalChangePercentage(12.3);
-    
-    // Dispatch initial event to notify parent component
-    const event = new CustomEvent('tradeUpdate', {
-      detail: { currentValue: initialValue }
-    });
-    window.dispatchEvent(event);
-  }, [isActive, startingCapital]);
+    setData(initialData);
+  };
   
-  // Automated trade simulator
-  useEffect(() => {
-    if (!isActive) return;
-    
-    // Generate a new trade immediately
-    generateTrade();
-    
-    // Schedule a new trade every 5-10 seconds
-    const scheduleNextTrade = () => {
-      const randomSeconds = Math.floor(Math.random() * 5) + 5; // 5 to 10 seconds
-      console.log(`Scheduling next trade in ${randomSeconds} seconds`);
-      
-      // Clear any existing timeouts to prevent multiple trades
-      return setTimeout(() => {
-        if (isActive) {
-          generateTrade();
-          // Schedule the next trade after this one
-          scheduleNextTrade();
-        }
-      }, randomSeconds * 1000);
-    };
-    
-    const timeoutId = scheduleNextTrade();
-    
-    return () => clearTimeout(timeoutId);
-  }, [isActive, generateTrade]);
-  
-  // Generate chart data for performance visualization
-  const [data, setData] = useState<{time: Date; value: number; change: number}[]>([]);
-  
-  useEffect(() => {
-    if (!isActive) return;
-    
-    // Generate initial data
-    setData(generateTradingData(startingCapital, 20));
-    
-    // Update data at regular intervals
-    const interval = setInterval(() => {
-      if (!isActive) return;
-      
-      setData(prev => {
-        const lastPoint = prev[prev.length - 1];
-        const change = (Math.random() - 0.45) * 2; // Slightly biased towards positive
-        const newValue = lastPoint.value + change;
-        
-        const newPoint = {
+  // Add a new data point to the chart
+  const addDataPoint = (newValue: number) => {
+    setData(prevData => {
+      if (prevData.length === 0) {
+        return [{
           time: new Date(),
           value: newValue,
-          change: (change / lastPoint.value) * 100
-        };
-        
-        return [...prev.slice(1), newPoint];
-      });
-    }, 2000);
-    
-    return () => clearInterval(interval);
-  }, [isActive, startingCapital]);
+          change: 0
+        }];
+      }
+      
+      const lastPoint = prevData[prevData.length - 1];
+      const change = ((newValue - lastPoint.value) / lastPoint.value) * 100;
+      
+      const newPoint = {
+        time: new Date(),
+        value: newValue,
+        change
+      };
+      
+      // Keep only the last 20 points
+      const newData = [...prevData, newPoint];
+      if (newData.length > 20) {
+        return newData.slice(newData.length - 20);
+      }
+      
+      return newData;
+    });
+  };
   
   // Convert data points to SVG path
   const chartPath = () => {
@@ -289,46 +206,57 @@ const TradingPerformance: React.FC<TradingPerformanceProps> = ({
       
       <div className="grid grid-cols-3 gap-3 text-center mb-4">
         <BrutalistCard className="p-3 bg-[#2A2A2A]">
-          <p className="text-sm text-gray-400">Avg. Trade</p>
-          <p className="text-xl font-bold">{formatPercentage(tradeStats.avgTrade)}</p>
-          <p className={`text-sm ${tradeStats.avgTrade > 0 ? 'text-brutalism-green' : 'text-brutalism-red'}`}>
-            Per trade average
-          </p>
+          <p className="text-sm text-gray-400">Avg. Win</p>
+          <p className="text-xl font-bold text-brutalism-green">+{formatPercentage(tradeStats.avgWin)}</p>
+          <p className="text-sm text-gray-500">Per winning trade</p>
         </BrutalistCard>
         
         <BrutalistCard className="p-3 bg-[#2A2A2A]">
           <p className="text-sm text-gray-400">Best Trade</p>
-          <p className="text-xl font-bold text-brutalism-green">+{formatPercentage(tradeStats.bestTrade)}</p>
+          <p className="text-xl font-bold text-brutalism-green">+{formatPercentage(Math.max(0, tradeStats.bestTrade))}</p>
           <p className="text-sm text-brutalism-green">Maximum profit</p>
         </BrutalistCard>
         
         <BrutalistCard className="p-3 bg-[#2A2A2A]">
-          <p className="text-sm text-gray-400">Worst Trade</p>
-          <p className="text-xl font-bold text-brutalism-red">{formatPercentage(tradeStats.worstTrade)}</p>
-          <p className="text-sm text-brutalism-red">Maximum loss</p>
+          <p className="text-sm text-gray-400">Avg. Loss</p>
+          <p className="text-xl font-bold text-brutalism-red">-{formatPercentage(tradeStats.avgLoss)}</p>
+          <p className="text-sm text-gray-500">Per losing trade</p>
         </BrutalistCard>
       </div>
       
       <div className="mt-4">
         <h4 className="font-mono font-bold mb-2">Recent Trades</h4>
         <div className="bg-[#2A2A2A] p-3 rounded-md border-2 border-black">
-          {recentTrades.map((trade, index) => (
-            <div 
-              key={index}
-              className={`flex justify-between items-center ${
-                index < recentTrades.length - 1 ? 'mb-2 border-b border-gray-700 pb-2' : ''
-              }`}
-            >
-              <div className="flex items-center">
-                <div className={`w-2 h-2 rounded-full ${trade.isPositive ? 'bg-brutalism-green' : 'bg-brutalism-red'} mr-2`}></div>
-                <p className="text-sm">{trade.symbol}</p>
+          {(() => {
+            const state = getTradingStateData();
+            const recentTrades = state.trades.slice(-3).reverse();
+            
+            if (recentTrades.length === 0) {
+              return (
+                <div className="text-center py-3">
+                  <p className="text-gray-400 text-sm">No trades executed yet</p>
+                </div>
+              );
+            }
+            
+            return recentTrades.map((trade, index) => (
+              <div 
+                key={trade.id}
+                className={`flex justify-between items-center ${
+                  index < recentTrades.length - 1 ? 'mb-2 border-b border-gray-700 pb-2' : ''
+                }`}
+              >
+                <div className="flex items-center">
+                  <div className={`w-2 h-2 rounded-full ${trade.isWin ? 'bg-brutalism-green' : 'bg-brutalism-red'} mr-2`}></div>
+                  <p className="text-sm">{trade.tokenSymbol}</p>
+                </div>
+                <p className={`text-sm ${trade.isWin ? 'text-brutalism-green' : 'text-brutalism-red'}`}>
+                  {trade.profitLossPercentage > 0 ? '+' : ''}{trade.profitLossPercentage.toFixed(2)}%
+                </p>
+                <p className="text-xs text-gray-400">{new Date(trade.timestamp).toLocaleTimeString()}</p>
               </div>
-              <p className={`text-sm ${trade.isPositive ? 'text-brutalism-green' : 'text-brutalism-red'}`}>
-                {trade.isPositive ? '+' : ''}{trade.percentage}%
-              </p>
-              <p className="text-xs text-gray-400">{trade.time}</p>
-            </div>
-          ))}
+            ));
+          })()}
         </div>
       </div>
     </BrutalistCard>

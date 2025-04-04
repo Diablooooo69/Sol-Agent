@@ -37,7 +37,7 @@ const Dashboard: React.FC = () => {
   const updateDashboardState = (state: any) => {
     // Always update with trading state
     const portfolioValue = formatCurrency(state.currentValue);
-    const change = formatPercentage(state.profitPercentage);
+    const change = formatPercentage(state.profitLossPercentage);
     const description = state.isActive ? 
       "Trading in progress" : 
       `Profit/Loss: ${state.profitLoss >= 0 ? '+' : ''}${formatCurrency(state.profitLoss)}`;
@@ -45,7 +45,7 @@ const Dashboard: React.FC = () => {
     
     setTradingPerformance({
       portfolioValue,
-      change: state.profitPercentage >= 0 ? `+${change}` : change,
+      change: state.profitLossPercentage >= 0 ? `+${change}` : change,
       description,
       activeBots
     });
