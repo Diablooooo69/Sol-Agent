@@ -9,6 +9,8 @@ import Dashboard from "@/pages/Dashboard";
 import AutoTrading from "@/pages/AutoTrading";
 import AIAgentBuilder from "@/pages/AIAgentBuilder";
 import TokenCreator from "@/pages/TokenCreator";
+import Staking from "@/pages/Staking";
+import Lending from "@/pages/Lending";
 
 function App() {
   const { wallet, connect, disconnect, isConnecting, error } = useWallet();
@@ -89,6 +91,8 @@ function App() {
           <Route path="/auto-trading" component={AutoTrading} />
           <Route path="/ai-agent-builder" component={AIAgentBuilder} />
           <Route path="/token-creator" component={TokenCreator} />
+          <Route path="/staking" component={Staking} />
+          <Route path="/lending" component={Lending} />
           <Route path="/llm">
             {() => (
               <div className="p-8 text-center">
