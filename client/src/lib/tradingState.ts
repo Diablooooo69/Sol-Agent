@@ -89,16 +89,16 @@ export function updateTradingState(updates: Partial<typeof tradingBotState>) {
 }
 
 // Start the trading bot
-export function startTradingBot(gameMode = 'standard', startingCapital = 1000) {
+export function startTradingBot(strategyProfile = 'standard', startingCapital = 1000) {
   // Don't start if already active
   if (tradingBotState.isActive) return;
   
   // Reset with the starting capital if current value is 0
   if (tradingBotState.currentValue <= 0) {
-    resetTradingState(startingCapital, gameMode);
+    resetTradingState(startingCapital, strategyProfile);
   } else {
     // Just update gameMode if continuing with existing capital
-    updateTradingState({ gameMode, isActive: true });
+    updateTradingState({ gameMode: strategyProfile, isActive: true });
   }
   
   // Execute first trade
@@ -204,8 +204,8 @@ export function executeSellTrade() {
   const state = getTradingState();
   if (!state.isActive || state.currentPosition === null) return;
   
-  // Determine if this trade is a win (60% probability)
-  const isWin = Math.random() < 0.6;
+  // Determine if this trade is a win (70% probability, 30% chance of loss)
+  const isWin = Math.random() < 0.7;
   
   // Calculate exit price with some volatility
   const volatility = (Math.random() * 20) + 5; // 5-25% price movement
@@ -291,10 +291,10 @@ export function executeSellTrade() {
 }
 
 // Reset trading state
-export function resetTradingState(startingCapital = 1000, gameMode = 'standard') {
+export function resetTradingState(startingCapital = 1000, strategyProfile = 'standard') {
   const resetState = {
     isActive: false,
-    gameMode: gameMode,
+    gameMode: strategyProfile, // kept as gameMode for backward compatibility
     startingCapital,
     currentValue: startingCapital,
     availableBalance: startingCapital,
@@ -310,9 +310,9 @@ export function resetTradingState(startingCapital = 1000, gameMode = 'standard')
     worstTrade: 0,
     currentPosition: null,
     trades: [],
-    stopLossPercentage: gameMode === 'conservative' ? 10 : gameMode === 'aggressive' ? 20 : 15,
-    takeProfitPercentage: gameMode === 'conservative' ? 15 : gameMode === 'aggressive' ? 35 : 25,
-    riskPerTrade: gameMode === 'conservative' ? 5 : gameMode === 'aggressive' ? 15 : 10,
+    stopLossPercentage: strategyProfile === 'conservative' ? 10 : strategyProfile === 'aggressive' ? 20 : 15,
+    takeProfitPercentage: strategyProfile === 'conservative' ? 15 : strategyProfile === 'aggressive' ? 35 : 25,
+    riskPerTrade: strategyProfile === 'conservative' ? 5 : strategyProfile === 'aggressive' ? 15 : 10,
     lastTradedToken: null,
     lastUpdated: new Date()
   } as typeof tradingBotState;
