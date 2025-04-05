@@ -5,6 +5,7 @@ import { BrutalistCard } from '@/components/ui/brutalist-card';
 import { BrutalistButton } from '@/components/ui/brutalist-button';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { Loader2, ArrowRightLeft, TrendingUp, Lock } from 'lucide-react';
+import ComingSoonDialog from '@/components/ui/coming-soon-dialog';
 
 const LendingPage: React.FC = () => {
   const { wallet } = useWallet();
@@ -12,6 +13,8 @@ const LendingPage: React.FC = () => {
   const [borrowingAmount, setBorrowingAmount] = useState<string>('');
   const [selectedToken, setSelectedToken] = useState<'SOL' | 'USDC' | 'BTC'>('SOL');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [isComingSoonOpen, setIsComingSoonOpen] = useState<boolean>(false);
+  const [comingSoonFeature, setComingSoonFeature] = useState<string>('');
   
   // Mock lending positions
   const [lendingPositions, setLendingPositions] = useState<Array<{
@@ -76,50 +79,22 @@ const LendingPage: React.FC = () => {
   
   // Handle lending submission
   const handleLend = () => {
-    if (!lendingAmount || parseFloat(lendingAmount) <= 0) return;
-    
-    setIsProcessing(true);
-    
-    // Simulate lending process
-    setTimeout(() => {
-      const newLending = {
-        id: `lend-${Date.now()}`,
-        tokenType: selectedToken,
-        amount: parseFloat(lendingAmount),
-        apy: tokens[selectedToken].lendingAPY,
-        startDate: new Date(),
-        earned: 0,
-        type: 'lending' as const
-      };
-      
-      setLendingPositions([...lendingPositions, newLending]);
-      setLendingAmount('');
-      setIsProcessing(false);
-    }, 2000);
+    setComingSoonFeature('Lending');
+    setIsComingSoonOpen(true);
+    return;
   };
   
   // Handle borrowing submission
   const handleBorrow = () => {
-    if (!borrowingAmount || parseFloat(borrowingAmount) <= 0) return;
-    
-    setIsProcessing(true);
-    
-    // Simulate borrowing process
-    setTimeout(() => {
-      const newBorrowing = {
-        id: `borrow-${Date.now()}`,
-        tokenType: selectedToken,
-        amount: parseFloat(borrowingAmount),
-        apy: tokens[selectedToken].borrowingAPY,
-        startDate: new Date(),
-        earned: 0,
-        type: 'borrowing' as const
-      };
-      
-      setLendingPositions([...lendingPositions, newBorrowing]);
-      setBorrowingAmount('');
-      setIsProcessing(false);
-    }, 2000);
+    setComingSoonFeature('Borrowing');
+    setIsComingSoonOpen(true);
+    return;
+  };
+  
+  // Show coming soon dialog for any interactive element
+  const showComingSoon = (feature: string) => {
+    setComingSoonFeature(feature);
+    setIsComingSoonOpen(true);
   };
   
   // Format date for display
@@ -407,12 +382,14 @@ const LendingPage: React.FC = () => {
                       <BrutalistButton 
                         className="flex-1 py-2"
                         color="default"
+                        onClick={() => showComingSoon('Add More Lending')}
                       >
                         Add More
                       </BrutalistButton>
                       <BrutalistButton 
                         className="flex-1 py-2"
                         color="red"
+                        onClick={() => showComingSoon('Lending Withdrawal')}
                       >
                         Withdraw
                       </BrutalistButton>
@@ -422,12 +399,14 @@ const LendingPage: React.FC = () => {
                       <BrutalistButton 
                         className="flex-1 py-2"
                         color="default"
+                        onClick={() => showComingSoon('Collateral Management')}
                       >
                         Collateral
                       </BrutalistButton>
                       <BrutalistButton 
                         className="flex-1 py-2"
                         color="green"
+                        onClick={() => showComingSoon('Loan Repayment')}
                       >
                         Repay
                       </BrutalistButton>
@@ -475,6 +454,13 @@ const LendingPage: React.FC = () => {
           </BrutalistCard>
         </div>
       </div>
+      
+      {/* Coming Soon Dialog */}
+      <ComingSoonDialog 
+        isOpen={isComingSoonOpen}
+        onClose={() => setIsComingSoonOpen(false)}
+        feature={comingSoonFeature}
+      />
     </div>
   );
 };

@@ -5,12 +5,15 @@ import { BrutalistCard } from '@/components/ui/brutalist-card';
 import { BrutalistButton } from '@/components/ui/brutalist-button';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
+import ComingSoonDialog from '@/components/ui/coming-soon-dialog';
 
 const StakingPage: React.FC = () => {
   const { wallet } = useWallet();
   const [amount, setAmount] = useState<string>('');
   const [lockPeriod, setLockPeriod] = useState<number>(30); // days
   const [isStaking, setIsStaking] = useState<boolean>(false);
+  const [isComingSoonOpen, setIsComingSoonOpen] = useState<boolean>(false);
+  const [comingSoonFeature, setComingSoonFeature] = useState<string>('');
   
   // Mock staked positions
   const [stakedPositions, setStakedPositions] = useState<Array<{
@@ -50,26 +53,15 @@ const StakingPage: React.FC = () => {
   
   // Handle staking submission
   const handleStake = () => {
-    if (!amount || parseFloat(amount) <= 0) return;
-    
-    setIsStaking(true);
-    
-    // Simulate staking process
-    setTimeout(() => {
-      const newStake = {
-        id: `stake-${Date.now()}`,
-        amount: parseFloat(amount),
-        startDate: new Date(),
-        endDate: new Date(Date.now() + lockPeriod * 24 * 60 * 60 * 1000),
-        apr: getAPR(lockPeriod),
-        rewards: calculateRewards(amount, lockPeriod),
-        status: 'active' as const
-      };
-      
-      setStakedPositions([...stakedPositions, newStake]);
-      setAmount('');
-      setIsStaking(false);
-    }, 2000);
+    setComingSoonFeature('Staking');
+    setIsComingSoonOpen(true);
+    return;
+  };
+  
+  // Show coming soon dialog for any interactive element
+  const showComingSoon = (feature: string) => {
+    setComingSoonFeature(feature);
+    setIsComingSoonOpen(true);
   };
   
   // Format date for display
@@ -138,7 +130,7 @@ const StakingPage: React.FC = () => {
                 />
                 <button 
                   className="absolute right-1 top-1 bg-indigo-600 text-white px-2 py-1 text-xs"
-                  onClick={() => setAmount(wallet ? '1.0' : '0.0')}
+                  onClick={() => showComingSoon('Set Maximum Amount')}
                 >
                   MAX
                 </button>
@@ -190,7 +182,7 @@ const StakingPage: React.FC = () => {
             <BrutalistButton
               className="w-full py-4 text-lg"
               color="purple"
-              onClick={handleStake}
+              onClick={() => showComingSoon('Staking')}
               disabled={!wallet || isStaking || !amount || parseFloat(amount) < 0.1}
             >
               {isStaking ? (
@@ -231,7 +223,7 @@ const StakingPage: React.FC = () => {
                 <BrutalistButton
                   className="px-6 py-2"
                   color="blue"
-                  onClick={() => window.scrollTo(0, 0)}
+                  onClick={() => showComingSoon('Staking')}
                 >
                   Stake Now
                 </BrutalistButton>
@@ -366,6 +358,13 @@ const StakingPage: React.FC = () => {
           </BrutalistCard>
         </div>
       </div>
+      
+      {/* Coming Soon Dialog */}
+      <ComingSoonDialog 
+        isOpen={isComingSoonOpen}
+        onClose={() => setIsComingSoonOpen(false)}
+        feature={comingSoonFeature}
+      />
     </div>
   );
 };
