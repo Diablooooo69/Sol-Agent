@@ -64,9 +64,9 @@ const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       path: "/llm",
-      name: "LLM",
+      name: "LLM Library",
       icon: "ri-ai-generate",
-      color: "bg-brutalism-green",
+      color: "bg-brutalism-purple",
     },
     {
       path: "/mcp",

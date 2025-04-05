@@ -1,0 +1,50 @@
+Here's a list of prominent Large Language Models (LLMs), including both open-source and proprietary options, with some notable features and developers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]  
+Open-Source LLMs: [2, 7]  
+
+• Llama (Large Language Model Meta AI): A set of LLMs developed by Meta AI, known for its performance and accessibility. 
+• Llama 3: The latest version of Llama, demonstrating state-of-the-art performance and new capabilities. 
+• BLOOM: A multilingual LLM created by Hugging Face, designed for text generation. 
+• Falcon: A foundational LLM with 40 billion parameters, trained on one trillion tokens. 
+• GPT-J: A powerful model known for impressive language generation capabilities. 
+• Mistral 7B: A major development in the field of LLMs, with 7 billion parameters and impressive performance. 
+• DeepSeek-R1: A first-generation reasoning model from DeepSeek, demonstrating competitive performance against leading proprietary models. 
+• Qwen 2.5-Max: An LLM developed by Alibaba Cloud, exploring the intelligence of large-scale MoE models. 
+• XGen-7B: An open-source LLM. 
+• Vicuna 13-B: An open-source LLM. 
+• Alpaca 7B: An open-source LLM. 
+• Gemma: An open-source LLM. 
+• Phi-3: An open-source LLM. 
+• Pythia: An open-source LLM. 
+• Nemotron-4 340B: An open-source LLM. 
+• DBRX: An open-source LLM. 
+• Stable LM 2: An open-source LLM. 
+• Mixtral 8x22B: An open-source LLM. 
+• Jamba: An open-source LLM. 
+• Command R: An open-source LLM. 
+• DBRX: An open-source LLM. 
+• Alpaca 7B: An open-source LLM. 
+• Nemotron-4 340B: An open-source LLM. [1, 2, 3, 7, 8, 11, 13, 14, 15, 16]  
+
+Proprietary LLMs: [6]  
+
+• OpenAI: The company behind the GPT series of models, setting the standard for natural language processing. 
+• GPT-4.5: A model from OpenAI. 
+• DeepSeek R1: A model from DeepSeek. 
+• GPT-o3-mini: A model from OpenAI. 
+• Claude 3.7 Sonnet: A model from Anthropic. 
+• Grok-3: A model from xAI. 
+• Mistral Large 2: A model from Mistral AI. 
+• PaLM 2: A model from Google. 
+• Falcon 180B: A model from. 
+• Gemini 1.5 Pro: A model from Google. 
+• Inflection-2.5: A model from Inflection AI. 
+• Cohere: A large language model developed by a Canadian startup with the same name. 
+• Gemini 2.0 Flash: A responsive LLM that can empower you to build apps faster and more easily. 
+• T5: A model developed by Google. 
+• BERT: A model developed by Google. 
+• RoBERTa: A robustly optimized BERT pretraining approach. 
+• GPT-NeoX and GPT-J: Open-source alternatives to GPT models. [1, 2, 3, 4, 6, 10]  
+
+Generative AI is experimental.
+
+[1] https://explodingtopics.com/blog/list-of-llms[2] https://www.algolia.com/blog/ai/examples-of-best-large-language-models[3] https://www.datacamp.com/blog/top-open-source-llms[4] https://www.hostinger.in/tutorials/large-language-models[5] https://medium.com/@raja.gupta20/deepseek-vs-chatgpt-a-new-ai-battle-c5d58f8176f3[6] https://www.goml.io/mastering-llm-boilerplates-key-use-cases-and-industry-leaders/[7] https://medium.com/@raja.gupta20/generative-ai-for-beginners-part-5-what-is-large-language-model-c57f3a15436a[8] https://codingscape.com/blog/most-powerful-llms-large-language-models[9] https://medium.com/illumination/know-how-deepseek-is-beating-most-ai-models-in-the-world-bd5fbf05959b[10] https://docs.github.com/copilot/using-github-copilot/ai-models/using-gemini-flash-in-github-copilot[11] https://bigblue.academy/en/best-large-language-models[12] https://botpenguin.com/blogs/understanding-the-various-types-of-llms[13] https://www.analyticsvidhya.com/blog/2023/07/the-fascinating-evolution-of-generative-ai/[14] https://app.vessl.ai/hub/llama-3-1-chat-api[15] https://www.techdogs.com/td-articles/trending-stories/qwen-2.5-max[16] https://github.com/Hannibal046/Awesome-LLM

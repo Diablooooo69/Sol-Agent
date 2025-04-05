@@ -11,6 +11,7 @@ import AIAgentBuilder from "@/pages/AIAgentBuilder";
 import TokenCreator from "@/pages/TokenCreator";
 import Staking from "@/pages/Staking";
 import Lending from "@/pages/Lending";
+import LLMPage from "@/pages/LLMPage";
 
 function App() {
   const { wallet, connect, disconnect, isConnecting, error } = useWallet();
@@ -93,14 +94,7 @@ function App() {
           <Route path="/token-creator" component={TokenCreator} />
           <Route path="/staking" component={Staking} />
           <Route path="/lending" component={Lending} />
-          <Route path="/llm">
-            {() => (
-              <div className="p-8 text-center">
-                <h1 className="text-3xl font-bold mb-4">LLM Feature</h1>
-                <p className="text-gray-400">This feature is coming soon.</p>
-              </div>
-            )}
-          </Route>
+          <Route path="/llm" component={LLMPage} />
           <Route path="/mcp">
             {() => (
               <div className="p-8 text-center">
