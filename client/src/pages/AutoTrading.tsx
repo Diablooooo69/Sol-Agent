@@ -125,72 +125,10 @@ const AutoTrading: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Bot Controls */}
           <div className="lg:col-span-1">
-            <div className="brutalist-card p-4 border-2 border-dashed border-gray-800">
-              <h3 className="font-mono font-bold text-xl mb-4">Bot Configuration</h3>
-              
-              {/* Strategy Selection */}
-              <div className="mb-4">
-                <label className="block text-sm font-mono mb-2">Trading Strategy</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {TRADING_STRATEGIES.map(strategy => (
-                    <button
-                      key={strategy.id}
-                      onClick={() => handleStrategyChange(strategy.id)}
-                      className={`brutalist-button py-2 px-3 text-xs font-mono ${
-                        strategyProfile === strategy.id 
-                          ? 'bg-black text-white' 
-                          : 'bg-gray-200 text-gray-800'
-                      }`}
-                    >
-                      {strategy.name}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs mt-1 text-gray-500">
-                  {TRADING_STRATEGIES.find(s => s.id === strategyProfile)?.description}
-                </p>
-              </div>
-              
-              {/* Starting Capital */}
-              <div className="mb-4">
-                <label className="block text-sm font-mono mb-2">Starting Capital</label>
-                <div className="flex items-center">
-                  <span className="text-sm mr-2">$</span>
-                  <input
-                    type="number"
-                    value={startingCapital}
-                    onChange={(e) => handleStartingCapitalChange(Number(e.target.value))}
-                    className="brutalist-input w-full"
-                    min="100"
-                    max="10000"
-                    step="100"
-                    disabled={isBotActive}
-                  />
-                </div>
-              </div>
-              
-              {/* Bot Controls */}
-              <div className="flex space-x-2">
-                {!isBotActive ? (
-                  <button
-                    onClick={handleStartBot}
-                    className="brutalist-button bg-brutalism-green text-white py-2 px-4 font-mono flex-grow"
-                  >
-                    Start Bot
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleStopBot}
-                    className="brutalist-button bg-brutalism-red text-white py-2 px-4 font-mono flex-grow"
-                  >
-                    Stop Bot
-                  </button>
-                )}
-              </div>
-            </div>
+
             
             {/* Stats Card with Trading Bot */}
-            <div className="brutalist-card p-4 mt-4 border-2 border-dashed border-gray-800">
+            <div className="brutalist-card p-4 border-2 border-dashed border-gray-800">
               <h3 className="font-mono font-bold text-xl mb-4">Trading Stats</h3>
               
               <TradingBot

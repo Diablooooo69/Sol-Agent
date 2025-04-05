@@ -190,8 +190,8 @@ const TradingPerformance: React.FC<TradingPerformanceProps> = ({
         <BrutalistCard className="p-3 bg-[#2A2A2A]">
           <p className="text-sm text-gray-400">Trades Today</p>
           <p className="text-xl font-bold">{tradeStats.total}</p>
-          <p className="text-sm text-brutalism-green">
-            {tradeStats.profit} Profit / {tradeStats.loss} Loss
+          <p className="text-sm">
+            <span className="text-brutalism-green">{tradeStats.profit} Win</span> / <span className="text-brutalism-red">{tradeStats.loss} Loss</span>
           </p>
         </BrutalistCard>
         
