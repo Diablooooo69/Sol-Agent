@@ -107,27 +107,27 @@ const TradingBot: React.FC<TradingBotProps> = ({
           
           {/* Withdrawal Option */}
           {profitLoss > 0 && (
-            <div className="p-3 bg-[#2A2A2A] rounded-md border-2 border-black">
+            <div className="p-4 bg-gradient-to-br from-blue-50 to-green-50 rounded-md border-2 border-green-400 shadow-sm">
               <div className="mb-3">
-                <p className="text-sm text-gray-400 mb-1">Available Profits</p>
-                <div className="flex justify-between">
-                  <p className="text-sm">Starting Capital</p>
-                  <p className="text-sm font-bold">${startingCapital.toFixed(2)}</p>
+                <p className="text-sm font-bold text-green-800 mb-2 uppercase">Available Profits</p>
+                <div className="flex justify-between bg-white bg-opacity-70 p-2 rounded mb-1">
+                  <p className="text-sm font-medium text-gray-700">Starting Capital</p>
+                  <p className="text-sm font-bold text-blue-800">${startingCapital.toFixed(2)}</p>
                 </div>
-                <div className="flex justify-between">
-                  <p className="text-sm">Current Profit</p>
+                <div className="flex justify-between bg-white bg-opacity-70 p-2 rounded mb-1">
+                  <p className="text-sm font-medium text-gray-700">Current Profit</p>
                   <p className="text-sm font-bold text-brutalism-green">+${profitLoss.toFixed(2)}</p>
                 </div>
-                <div className="border-t border-gray-700 my-2"></div>
-                <div className="flex justify-between">
-                  <p className="text-sm">Withdrawal Fee</p>
-                  <p className="text-sm font-bold">0.5 SOL</p>
+                <div className="border-t border-green-200 my-2"></div>
+                <div className="flex justify-between bg-white bg-opacity-70 p-2 rounded">
+                  <p className="text-sm font-medium text-gray-700">Withdrawal Fee</p>
+                  <p className="text-sm font-bold text-indigo-600">0.5 SOL</p>
                 </div>
               </div>
               
               <BrutalistButton
-                className="w-full py-2 text-sm"
-                color="yellow"
+                className="w-full py-2 text-sm font-bold"
+                color="green"
                 onClick={() => setIsWithdrawalModalOpen(true)}
               >
                 <i className="ri-money-dollar-circle-line mr-1"></i> Withdraw Profits

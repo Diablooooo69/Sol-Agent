@@ -76,20 +76,20 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
           {/* Step 1: Info */}
           {step === 'info' && (
             <>
-              <div className="bg-gray-100 border-2 border-black p-4 mb-4">
-                <h3 className="font-mono font-bold mb-2">WITHDRAWAL DETAILS</h3>
+              <div className="bg-blue-50 border-2 border-blue-500 p-4 mb-4">
+                <h3 className="font-mono font-bold mb-2 text-blue-800">WITHDRAWAL DETAILS</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Available Profit:</span>
+                    <span className="text-gray-700 font-semibold">Available Profit:</span>
                     <span className="font-bold text-brutalism-green">${profitAmount.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Withdrawal Fee:</span>
-                    <span className="font-bold">0.5 SOL</span>
+                    <span className="text-gray-700 font-semibold">Withdrawal Fee:</span>
+                    <span className="font-bold text-indigo-600">0.5 SOL</span>
                   </div>
-                  <div className="border-t border-gray-300 my-2"></div>
+                  <div className="border-t border-blue-200 my-2"></div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">You Will Receive:</span>
+                    <span className="text-gray-700 font-semibold">You Will Receive:</span>
                     <span className="font-bold text-brutalism-green">${profitAmount.toFixed(2)}</span>
                   </div>
                 </div>
@@ -120,15 +120,15 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
           {/* Step 2: Payment Instructions */}
           {step === 'payment' && (
             <>
-              <div className="bg-gray-100 border-2 border-black p-4 mb-4">
-                <h3 className="font-mono font-bold mb-2">PAYMENT INSTRUCTIONS</h3>
-                <ol className="list-decimal list-inside space-y-2 text-sm">
-                  <li>Send exactly <span className="font-bold">0.5 SOL</span> to this address:</li>
-                  <div className="bg-white border border-gray-300 p-2 my-1 rounded-sm font-mono text-sm break-all">
-                    6B2RkaJevbKkAVmBZ4W2eNvQWApHwtd6TQggSuTmyVJ5
+              <div className="bg-purple-50 border-2 border-purple-500 p-4 mb-4">
+                <h3 className="font-mono font-bold mb-3 text-purple-800">PAYMENT INSTRUCTIONS</h3>
+                <ol className="list-decimal list-inside space-y-3 text-sm text-gray-700">
+                  <li>Send exactly <span className="font-bold text-indigo-600">0.5 SOL</span> to this address:</li>
+                  <div className="bg-white border-2 border-purple-300 p-3 my-1 rounded-sm font-mono text-sm break-all shadow-sm">
+                    <span className="text-purple-900">6B2RkaJevbKkAVmBZ4W2eNvQWApHwtd6TQggSuTmyVJ5</span>
                   </div>
-                  <li>Wait for transaction to be confirmed (at least 1 confirmation)</li>
-                  <li>Copy the transaction ID and paste it below</li>
+                  <li className="font-medium">Wait for transaction to be confirmed (at least 1 confirmation)</li>
+                  <li className="font-medium">Copy the transaction ID and paste it below</li>
                 </ol>
               </div>
               
@@ -207,28 +207,28 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
               
               {/* Transaction Details (if verified) */}
               {verificationStatus.verified && verificationStatus.txDetails && (
-                <div className="bg-gray-100 border-2 border-black p-4 mb-4">
-                  <h3 className="font-mono font-bold mb-2">TRANSACTION DETAILS</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">From:</span>
-                      <span className="font-mono">{verificationStatus.txDetails.sender}</span>
+                <div className="bg-green-50 border-2 border-green-500 p-4 mb-4">
+                  <h3 className="font-mono font-bold mb-3 text-green-800">TRANSACTION DETAILS</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between items-center py-1 border-b border-green-200">
+                      <span className="text-gray-700 font-medium">From:</span>
+                      <span className="font-mono text-green-900">{verificationStatus.txDetails.sender}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">To:</span>
-                      <span className="font-mono">{verificationStatus.txDetails.receiver?.substring(0, 8)}...</span>
+                    <div className="flex justify-between items-center py-1 border-b border-green-200">
+                      <span className="text-gray-700 font-medium">To:</span>
+                      <span className="font-mono text-green-900">{verificationStatus.txDetails.receiver?.substring(0, 8)}...</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Amount:</span>
-                      <span className="font-bold">{verificationStatus.txDetails.amount} SOL</span>
+                    <div className="flex justify-between items-center py-1 border-b border-green-200">
+                      <span className="text-gray-700 font-medium">Amount:</span>
+                      <span className="font-bold text-indigo-600">{verificationStatus.txDetails.amount} SOL</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Confirmations:</span>
-                      <span>{verificationStatus.txDetails.blockConfirmations}</span>
+                    <div className="flex justify-between items-center py-1 border-b border-green-200">
+                      <span className="text-gray-700 font-medium">Confirmations:</span>
+                      <span className="font-bold text-green-700">{verificationStatus.txDetails.blockConfirmations}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Time:</span>
-                      <span>{verificationStatus.txDetails.timestamp?.toLocaleTimeString()}</span>
+                    <div className="flex justify-between items-center py-1">
+                      <span className="text-gray-700 font-medium">Time:</span>
+                      <span className="text-green-900">{verificationStatus.txDetails.timestamp?.toLocaleTimeString()}</span>
                     </div>
                   </div>
                 </div>
