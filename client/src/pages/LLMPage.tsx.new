@@ -311,7 +311,7 @@ const LLMPage: React.FC = () => {
       category: "Deployment & Optimization"
     },
     
-    // MCP (Model Customization & Prompting)
+    // MCP (Model Editing, Customization, Prompt Engineering)
     {
       name: "ROME",
       description: "Rank-One Model Editing for updating facts in language models",
