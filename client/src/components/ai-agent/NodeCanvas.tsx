@@ -136,30 +136,49 @@ const NodeCanvas: React.FC<NodeCanvasProps> = ({
       const newX = e.clientX - canvasRect.left - dragOffset.x;
       const newY = e.clientY - canvasRect.top - dragOffset.y;
       
-      onNodeUpdate(selectedNode, {
-        position: {
-          x: Math.max(0, newX),
-          y: Math.max(0, newY)
-        }
+      // Use requestAnimationFrame for smoother node dragging
+      requestAnimationFrame(() => {
+        onNodeUpdate(selectedNode, {
+          position: {
+            x: Math.max(0, newX),
+            y: Math.max(0, newY)
+          }
+        });
       });
     }
     
     if (creatingConnection) {
-      setCreatingConnection({
-        ...creatingConnection,
-        mousePosition: {
-          x: e.clientX - (canvasRef.current?.getBoundingClientRect().left || 0),
-          y: e.clientY - (canvasRef.current?.getBoundingClientRect().top || 0)
-        }
+      // Use requestAnimationFrame for smoother connection creation
+      requestAnimationFrame(() => {
+        setCreatingConnection({
+          ...creatingConnection,
+          mousePosition: {
+            x: e.clientX - (canvasRef.current?.getBoundingClientRect().left || 0),
+            y: e.clientY - (canvasRef.current?.getBoundingClientRect().top || 0)
+          }
+        });
       });
 
-      // Check if hovering over a valid input port
+      // Check if hovering over a valid input port or bidirectional port
       const portElement = document.elementFromPoint(e.clientX, e.clientY);
-      if (portElement?.classList.contains('node-port-input')) {
+      
+      // Check for both input ports and bidirectional ports
+      if (portElement?.classList.contains('node-port-input') || portElement?.classList.contains('node-port-bidirectional')) {
         const nodeId = portElement.getAttribute('data-node-id');
         const portName = portElement.getAttribute('data-port-name');
+        const isBidirectional = portElement.classList.contains('node-port-bidirectional');
+        
+        // Don't allow connecting to the same node
+        if (nodeId && nodeId === creatingConnection.sourceNodeId) {
+          setHoveredPort(null);
+          return;
+        }
         
         if (nodeId && portName) {
+          // Add visual guidance with pulse animation when hovering over valid connection target
+          portElement.classList.add('pulse-animation');
+          
+          // Store port position for drawing connection preview
           const rect = portElement.getBoundingClientRect();
           setHoveredPort({
             nodeId,
@@ -172,9 +191,14 @@ const NodeCanvas: React.FC<NodeCanvasProps> = ({
           });
           return;
         }
+      } else {
+        // Remove pulse animation from all ports when not hovering
+        document.querySelectorAll('.pulse-animation').forEach(el => {
+          el.classList.remove('pulse-animation');
+        });
+        
+        setHoveredPort(null);
       }
-      
-      setHoveredPort(null);
     }
   }, [isDragging, selectedNode, nodes, dragOffset, creatingConnection, onNodeUpdate]);
 
@@ -442,10 +466,12 @@ const NodeCanvas: React.FC<NodeCanvasProps> = ({
       
       <div 
         ref={canvasRef} 
-        className="canvas-container h-[500px] p-4 relative overflow-hidden" 
+        className="canvas-container h-[600px] p-4 relative overflow-hidden" 
         style={{ 
           backgroundSize: '25px 25px',
-          backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)'
+          backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)',
+          willChange: 'transform',
+          cursor: creatingConnection ? 'crosshair' : 'default'
         }}
         onMouseDown={handleCanvasMouseDown}
       >
@@ -618,7 +644,7 @@ const NodeCanvas: React.FC<NodeCanvasProps> = ({
                   {node.inputs.map(input => (
                     <div key={input} className="flex items-center">
                       <div 
-                        className="node-port node-port-input w-3 h-3 rounded-full bg-brutalism-red mr-2 border border-white cursor-crosshair"
+                        className="node-port node-port-input w-3 h-3 rounded-full mr-2 cursor-crosshair"
                         data-node-id={node.id}
                         data-port-name={input}
                         onMouseDown={(e) => handlePortMouseDown(e, node.id, input, false)}
@@ -632,7 +658,7 @@ const NodeCanvas: React.FC<NodeCanvasProps> = ({
                     <div key={output} className="flex items-center">
                       <span className="text-xs">{output}</span>
                       <div 
-                        className="node-port node-port-output w-3 h-3 rounded-full bg-brutalism-green ml-2 border border-white cursor-crosshair"
+                        className="node-port node-port-output w-3 h-3 rounded-full ml-2 cursor-crosshair"
                         data-node-id={node.id}
                         data-port-name={output}
                         onMouseDown={(e) => handlePortMouseDown(e, node.id, output, true)}
@@ -641,6 +667,32 @@ const NodeCanvas: React.FC<NodeCanvasProps> = ({
                   ))}
                 </div>
               </div>
+              
+              {/* Bidirectional ports */}
+              {node.bidirectional && node.bidirectional.length > 0 && (
+                <div className="flex flex-col space-y-2 mt-3 pt-2 border-t border-gray-700">
+                  <div className="text-xs text-gray-400 mb-1">Bidirectional Ports:</div>
+                  <div className="flex flex-wrap gap-2">
+                    {node.bidirectional.map(port => (
+                      <div key={port} className="flex items-center bg-[#2A2A2A] px-2 py-1 rounded-sm">
+                        <div 
+                          className="node-port node-port-bidirectional w-3 h-3 rounded-full mr-2 cursor-crosshair"
+                          data-node-id={node.id}
+                          data-port-name={port}
+                          onMouseDown={(e) => handlePortMouseDown(e, node.id, port, true)}
+                        />
+                        <span className="text-xs">{port}</span>
+                        <div 
+                          className="node-port node-port-bidirectional w-3 h-3 rounded-full ml-2 cursor-crosshair"
+                          data-node-id={node.id}
+                          data-port-name={port}
+                          onMouseDown={(e) => handlePortMouseDown(e, node.id, port, false)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               {/* Node actions */}
               <div className="flex justify-between mt-3 pt-2 border-t border-gray-700">
@@ -682,6 +734,34 @@ const NodeCanvas: React.FC<NodeCanvasProps> = ({
               </div>
             </div>
           ))}
+          
+          {/* Minimap */}
+          <div className="minimap">
+            <div className="p-1 bg-brutalism-blue text-xs font-bold">Canvas Overview</div>
+            <div className="p-1 relative" style={{ height: 'calc(100% - 22px)' }}>
+              {nodes.map(node => {
+                // Calculate relative position for minimap
+                const x = (node.position.x / 5000) * 100;
+                const y = (node.position.y / 5000) * 100;
+                
+                return (
+                  <div 
+                    key={`minimap-${node.id}`}
+                    className="minimap-node absolute"
+                    style={{
+                      left: `${x}%`,
+                      top: `${y}%`,
+                      width: '10px',
+                      height: '6px',
+                      backgroundColor: getNodeColor(node.type),
+                      transform: `translate(-50%, -50%)`
+                    }}
+                    title={node.title}
+                  />
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
       

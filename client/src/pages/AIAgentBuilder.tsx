@@ -181,11 +181,16 @@ const AIAgentBuilder: React.FC = () => {
       category: 'data',
       description: 'Fetches real-time market data from cryptocurrency exchanges',
       inputs: [],
-      outputs: ['data'],
+      outputs: ['data', 'marketEvents'],
       data: {
         Symbol: 'SOL/USDT',
         Timeframe: '1m',
         DataSource: 'Binance'
+      },
+      gitRepo: {
+        url: 'https://github.com/autryntix/market-data-connector',
+        branch: 'main',
+        lastUpdated: new Date('2025-03-15')
       },
       documentation: `
         <h3>Market Data Node</h3>
@@ -196,6 +201,7 @@ const AIAgentBuilder: React.FC = () => {
           <li><strong>DataSource:</strong> The exchange to use (Binance, Coinbase, etc.)</li>
         </ul>
         <p>Output <code>data</code> provides OHLCV (Open, High, Low, Close, Volume) data.</p>
+        <p>Output <code>marketEvents</code> provides significant market events such as large trades, price breakouts, etc.</p>
       `,
       script: `// This script fetches market data from an API
 const symbol = data.Symbol;
@@ -214,7 +220,81 @@ outputs.data = {
   timestamp: new Date().toISOString()
 };
 
+// Also detect any significant market events
+outputs.marketEvents = {
+  largeOrders: [
+    {
+      side: "buy",
+      size: 25000,
+      impact: 0.5,
+      timestamp: new Date().toISOString()
+    }
+  ],
+  volumeSpikes: Boolean(Math.random() > 0.7)
+};
+
 log("Market data fetched successfully");`
+    },
+    {
+      type: 'dataSource',
+      title: 'DeFi Protocol Scanner',
+      icon: 'ri-bar-chart-box-line',
+      color: 'brutalism-blue',
+      category: 'data',
+      description: 'Monitors DeFi protocols for yield, TVL, and other metrics',
+      inputs: [],
+      outputs: ['stats', 'opportunities'],
+      data: {
+        Protocol: 'Raydium',
+        Metrics: 'APY, TVL, Volume',
+        UpdateFrequency: 300
+      },
+      gitRepo: {
+        url: 'https://github.com/autryntix/defi-metrics-scanner',
+        branch: 'main',
+        lastUpdated: new Date('2025-03-25')
+      },
+      documentation: `
+        <h3>DeFi Protocol Scanner</h3>
+        <p>This node monitors decentralized finance protocols and tracks key metrics.</p>
+        <ul>
+          <li><strong>Protocol:</strong> The DeFi protocol to monitor (e.g., Raydium, Orca)</li>
+          <li><strong>Metrics:</strong> The metrics to track (APY, TVL, etc.)</li>
+          <li><strong>UpdateFrequency:</strong> How often to update data in seconds</li>
+        </ul>
+        <p>Output <code>stats</code> provides the latest protocol metrics.</p>
+        <p>Output <code>opportunities</code> identifies potentially profitable opportunities.</p>
+      `,
+      script: `// This script monitors DeFi protocols
+const protocol = data.Protocol;
+const metrics = data.Metrics.split(', ');
+const frequency = data.UpdateFrequency;
+
+log("Monitoring " + protocol + " for " + metrics.join(", "));
+
+// Simulate protocol metrics data
+outputs.stats = {
+  protocol: protocol,
+  tvl: 35000000 + Math.random() * 1000000,
+  apy: 8.5 + Math.random() * 2,
+  volume24h: 12000000 + Math.random() * 500000,
+  updated: new Date().toISOString()
+};
+
+// Identify potential opportunities
+outputs.opportunities = {
+  highYield: [
+    {
+      pool: protocol + "-USDC-SOL",
+      apy: 12.5,
+      risk: "medium",
+      impermanentLoss: "low"
+    }
+  ],
+  arbitrage: Boolean(Math.random() > 0.7)
+};
+
+log("DeFi protocol data updated");`
     },
     {
       type: 'dataSource',
